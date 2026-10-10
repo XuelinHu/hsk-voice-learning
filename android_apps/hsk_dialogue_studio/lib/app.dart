@@ -167,7 +167,7 @@ class _LoginPageState extends State<_LoginPage> {
         content: TextField(
           controller: controller,
           keyboardType: TextInputType.url,
-          decoration: const InputDecoration(hintText: 'http://127.0.0.1:8866'),
+          decoration: const InputDecoration(hintText: 'http://127.0.0.1:8040'),
         ),
         actions: <Widget>[
           TextButton(

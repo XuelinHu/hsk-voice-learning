@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 
 import { chromium } from 'playwright';
 
-const baseUrl = process.env.HSK_BASE_URL || 'http://127.0.0.1:8866';
+const baseUrl = process.env.HSK_BASE_URL || 'http://127.0.0.1:4035';
 const browser = await chromium.launch({
   executablePath: 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
   headless: true,

@@ -73,7 +73,7 @@ class _FakeCoachGateway implements CoachGateway {
 
   final List<ChatMessage> history;
   @override
-  String baseUrl = 'http://127.0.0.1:8866';
+  String baseUrl = 'http://127.0.0.1:8040';
 
   @override
   Future<LoginSession> login(String username, String password) async =>

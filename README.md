@@ -17,10 +17,10 @@ APK 通过同一个 Node 后端连接百炼，密钥不会写入 APK。USB 真�
 ```powershell
 cd D:\workspace\front\hsk-voice-learning
 npm start
-adb reverse tcp:8866 tcp:8866
+adb reverse tcp:8040 tcp:8040
 ```
 
-局域网独立使用时，在 APK 登录页点击“服务地址”，填写运行后端电脑的局域网地址，例如 `http://192.168.1.10:8866`，同时将后端 `HOST` 配置为 `0.0.0.0`。
+局域网独立使用时，在 APK 登录页点击“服务地址”，填写运行后端电脑的局域网地址，例如 `http://192.168.1.10:4035`，同时将后端 `HOST` 配置为 `0.0.0.0`。
 
 ## PostgreSQL 数据持久化
 
@@ -51,10 +51,10 @@ npm start
 
 默认地址：
 
-- 对话研习室：<http://127.0.0.1:8866/studio/>
-- 口语任务站：<http://127.0.0.1:8866/mission/>
+- 对话研习室：<http://127.0.0.1:4035/studio/>
+- 口语任务站：<http://127.0.0.1:4035/mission/>
 
-如果 `.env` 中配置了其他 `PORT`，请使用实际启动日志中的端口。
+网页入口由 `.env` 中的 `WEB_PORT=4035` 控制，后端 API 使用 `PORT=8040`；请按启动日志访问对应服务。
 
 ## 测试账号
 
@@ -75,7 +75,8 @@ DASHSCOPE_API_URL=https://dashscope.aliyuncs.com/compatible-mode/v1/chat/complet
 DASHSCOPE_MODEL=qwen-plus
 DASHSCOPE_ASR_MODEL=qwen3-asr-flash
 TOKEN_SECRET=replace-with-a-long-random-value
-PORT=8866
+PORT=8040
+WEB_PORT=4035
 HOST=127.0.0.1
 ```
 
@@ -128,3 +129,7 @@ hsk-voice-learning/
     e2e/               # Playwright 浏览器测试
     visual/            # 响应式截图脚本
 ```
+
+## 启动端口
+
+网页入口：4035；后台服务：8040。完整启动约定见 [PORTS.md](./PORTS.md)。

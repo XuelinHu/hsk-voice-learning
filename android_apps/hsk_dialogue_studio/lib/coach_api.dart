@@ -75,7 +75,7 @@ abstract class CoachGateway {
 
 class CoachApi implements CoachGateway {
   CoachApi({
-    this.baseUrl = 'http://127.0.0.1:8866',
+    this.baseUrl = 'http://127.0.0.1:8040',
     this.clientApp = 'unknown',
   });
 
@@ -250,7 +250,7 @@ class CoachApi implements CoachGateway {
       return payload;
     } on SocketException {
       throw const CoachApiException(
-        '无法连接本机服务。USB 调试时请先执行 adb reverse tcp:8866 tcp:8866。',
+        '无法连接本机服务。USB 调试时请先执行 adb reverse tcp:8040 tcp:8040。',
       );
     } on TimeoutException {
       throw const CoachApiException('服务响应超时，请稍后重试。');
