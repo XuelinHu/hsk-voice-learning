@@ -1,0 +1,67 @@
+:root {
+  --canvas: #f1f1ec;
+  --surface: #fffefa;
+  --conversation: #f6f6f1;
+  --ink: #20211f;
+  --muted-strong: #5f615d;
+  --muted: #858781;
+  --line: #dedfd8;
+  --line-strong: #bfc2b8;
+  --soft: #f0f1e8;
+  --accent: #d4483f;
+  --accent-ink: #ffffff;
+  --highlight: #e5b931;
+  --user-bubble: #2b5947;
+  --user-bubble-ink: #ffffff;
+  --login-visual: #e1b72f;
+  --login-visual-text: #252619;
+}
+
+.mission-topbar { border-top: 4px solid var(--highlight); }
+.mission-score { display: flex; align-items: baseline; gap: 8px; margin-left: auto; margin-right: 20px; color: var(--muted); font-size: 10px; }
+.mission-score strong { color: var(--accent); font-size: 22px; }
+.mission-workspace { display: grid; grid-template-columns: 220px minmax(430px, 1fr) 300px; }
+.mission-rail, .brief-panel { min-height: 0; overflow-y: auto; background: var(--surface); }
+.mission-rail { display: flex; flex-direction: column; border-right: 1px solid var(--line); padding: 24px 18px; }
+.mission-route { position: relative; display: grid; gap: 20px; margin: 20px 0 28px; padding: 0; list-style: none; }
+.mission-route::before { content: ""; position: absolute; top: 16px; bottom: 16px; left: 15px; width: 1px; background: var(--line); }
+.mission-route li { position: relative; display: grid; grid-template-columns: 32px 1fr; gap: 10px; align-items: center; }
+.mission-route li > span { z-index: 1; display: grid; place-items: center; width: 32px; height: 32px; border: 1px solid var(--line-strong); border-radius: 50%; background: var(--surface); color: var(--muted); font: 800 11px/1 Consolas, monospace; }
+.mission-route strong, .mission-route small { display: block; }
+.mission-route strong { font-size: 12px; }
+.mission-route small { margin-top: 3px; color: var(--muted); font-size: 9px; }
+.mission-route .is-complete > span { border-color: #39755b; background: #39755b; color: white; }
+.mission-route .is-current > span { border-color: var(--accent); background: var(--accent); color: white; }
+.mission-route .is-current strong { color: var(--accent); }
+.mission-controls { display: grid; gap: 14px; border-top: 1px solid var(--line); padding-top: 20px; }
+.mission-rail > button { margin-top: auto; }
+.mission-chat .chat-heading__badge { background: var(--highlight); color: var(--ink); }
+.mission-counter { display: flex; align-items: baseline; margin-left: auto; }
+.mission-counter strong { font-size: 20px; }
+.mission-counter span { color: var(--muted); font-size: 10px; }
+.brief-panel { border-left: 1px solid var(--line); }
+.brief-header { border-bottom: 1px solid var(--line); padding: 28px 24px; background: var(--ink); color: white; }
+.brief-header > span { color: var(--highlight); font: 800 10px/1 Consolas, monospace; }
+.brief-header h2 { margin: 10px 0 0; font-size: 19px; }
+.brief-header p { margin: 9px 0 0; color: #c8cbc5; font-size: 11px; line-height: 1.7; }
+.objective-list, .mission-progress-section, .phrase-bank { padding: 22px 24px; border-bottom: 1px solid var(--line); }
+.objective-list label { display: flex; align-items: center; gap: 9px; margin-top: 13px; color: var(--muted-strong); font-size: 11px; }
+.objective-list input { accent-color: #39755b; }
+.mission-progress-section > div:first-child { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 10px; color: var(--muted); }
+.mission-progress-section strong { color: var(--ink); }
+.phrase-bank { display: grid; gap: 8px; }
+.phrase-bank .section-label { margin-bottom: 4px; }
+.phrase-bank button { border: 1px solid var(--line); border-radius: 6px; padding: 10px; background: var(--surface); color: var(--muted-strong); font-size: 11px; line-height: 1.5; text-align: left; }
+.phrase-bank button:hover { border-color: var(--highlight); color: var(--ink); }
+
+@media (max-width: 1120px) {
+  .mission-workspace { grid-template-columns: 200px minmax(0, 1fr); }
+  .brief-panel { display: none; }
+}
+
+@media (max-width: 760px) {
+  .mission-score { display: none; }
+  .mission-workspace { display: block; }
+  .mission-rail { display: none; }
+  .mission-chat { height: 100%; }
+}

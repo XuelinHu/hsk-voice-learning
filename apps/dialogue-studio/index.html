@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="HSK 对话研习室，面向中文学习者的语音对话训练工具。">
+  <title>HSK 对话研习室</title>
+  <link rel="stylesheet" href="/shared/base.css">
+  <link rel="stylesheet" href="/studio/studio.css">
+</head>
+<body data-app="studio">
+  <div id="login-overlay" class="login-overlay">
+    <section class="login-visual" aria-label="HSK 中文口语学习">
+      <div class="brand-lockup">
+        <span class="brand-mark" aria-hidden="true">汉</span>
+        <div><strong>HSK VOICE LAB</strong><span>中文口语学习系统</span></div>
+      </div>
+      <div class="login-visual__message">
+        <h1>让中文<br>真正说出口</h1>
+        <p>围绕真实生活场景，以听、说、反馈构成完整练习闭环。每一次开口，都会被认真回应。</p>
+      </div>
+    </section>
+    <section class="login-panel">
+      <form id="login-form" class="login-form">
+        <p class="login-form__eyebrow">LEARNER ACCESS</p>
+        <h2>进入研习室</h2>
+        <p class="login-form__intro">使用测试账号开始一段持续的中文对话。</p>
+        <label class="field" for="username">账号<input id="username" name="username" autocomplete="username" required></label>
+        <label class="field" for="password">密码<input id="password" name="password" type="password" autocomplete="current-password" required></label>
+        <p id="login-error" class="form-error" role="alert"></p>
+        <button class="primary-button" type="submit">进入学习空间</button>
+        <div class="test-account">测试学员：<code>hskstudent / Hsk@2026</code><br>测试教师：<code>hskteacher / Teacher@2026</code></div>
+      </form>
+    </section>
+  </div>
+
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-lockup">
+        <span class="brand-mark" aria-hidden="true">汉</span>
+        <div><strong>HSK VOICE LAB</strong><span>中文口语学习系统</span></div>
+      </div>
+      <div class="topbar__title"><h1>HSK 对话研习室</h1><p>沉浸式中文场景会话</p></div>
+      <div class="topbar__tools">
+        <span class="session-pill">SESSION <strong id="session-duration">00:00</strong></span>
+        <div class="user-menu"><span class="user-avatar">学</span><span id="user-name" class="user-name"></span><button id="logout-button" class="quiet-button" type="button">退出</button></div>
+      </div>
+    </header>
+
+    <main class="workspace studio-workspace">
+      <aside class="studio-sidebar">
+        <section>
+          <p class="section-label">学习设置</p>
+          <div class="control-stack">
+            <label class="compact-field" for="hsk-level">HSK 等级
+              <select id="hsk-level"><option value="1">HSK 1 · 入门</option><option value="2">HSK 2 · 基础</option><option value="3" selected>HSK 3 · 进阶</option><option value="4">HSK 4 · 中级</option><option value="5">HSK 5 · 高级</option><option value="6">HSK 6 · 熟练</option></select>
+            </label>
+            <label class="compact-field" for="scenario">对话场景
+              <select id="scenario"><option value="咖啡店点单">咖啡店点单</option><option value="初次见面">初次见面</option><option value="询问路线">询问路线</option><option value="看病挂号">看病挂号</option><option value="求职面试">求职面试</option><option value="自由对话">自由对话</option></select>
+            </label>
+          </div>
+        </section>
+        <section class="studio-note">
+          <span class="studio-note__index">本轮</span>
+          <h2 data-current-scenario>咖啡店点单</h2>
+          <p>尝试说清楚数量、口味和支付方式。教练会在不打断交流的前提下纠正表达。</p>
+        </section>
+        <section class="studio-metrics">
+          <div class="metric"><strong id="message-count">0</strong><span>学习者发言</span></div>
+          <div class="metric"><strong>24</strong><span>模型上下文轮次</span></div>
+        </section>
+        <button id="reset-button" class="quiet-button studio-reset" type="button">开始新会话</button>
+      </aside>
+
+      <section class="chat-pane">
+        <div class="chat-heading"><span class="chat-heading__badge">AI</span><div><h2>中文对话教练</h2><p>根据 HSK 等级回应并进行轻量纠错</p></div><span class="studio-live">在线</span></div>
+        <div id="chat-log" class="chat-log" aria-live="polite"></div>
+        <div class="composer">
+          <div class="voice-strip"><span class="voice-dot"></span><span id="voice-status" data-tone="ready">语音已就绪</span><span id="voice-name" class="voice-name"></span></div>
+          <form id="message-form" class="composer-row"><button id="mic-button" class="mic-button" type="button" aria-label="开始语音输入">说</button><input id="message-input" class="message-input" placeholder="输入中文，按 Enter 发送" autocomplete="off"><button id="send-button" class="send-button" type="submit" aria-label="发送消息">发送</button></form>
+          <div class="composer-options"><label class="switch-label"><input id="continuous-mode" type="checkbox" aria-label="连续语音对话">连续语音对话</label><span id="continuous-status">单轮语音模式</span></div>
+        </div>
+      </section>
+
+      <aside class="coach-panel">
+        <p class="section-label">对话提示</p>
+        <div class="phrase-list">
+          <button type="button" data-phrase="你好，我想要一杯热拿铁。"><span>01</span><strong>你好，我想要一杯热拿铁。</strong><small>礼貌地开始点单</small></button>
+          <button type="button" data-phrase="请问可以少放一点糖吗？"><span>02</span><strong>请问可以少放一点糖吗？</strong><small>提出口味要求</small></button>
+          <button type="button" data-phrase="我用手机支付，谢谢。"><span>03</span><strong>我用手机支付，谢谢。</strong><small>说明支付方式</small></button>
+        </div>
+        <div class="voice-guide"><p class="section-label">连续对话机制</p><ol><li>浏览器识别你的中文</li><li>百炼生成场景回应</li><li>Microsoft 中文语音朗读</li><li>自动恢复下一轮聆听</li></ol></div>
+      </aside>
+    </main>
+  </div>
+  <script type="module" src="/shared/app.js"></script>
+  <script type="module" src="/studio/studio.js"></script>
+</body>
+</html>

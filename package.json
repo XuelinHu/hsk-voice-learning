@@ -1,0 +1,27 @@
+{
+  "name": "hsk-voice-learning",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Two parallel HSK voice-learning web applications with a shared secure AI backend.",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server/server.js",
+    "db:migrate": "node --env-file-if-exists=.env scripts/migrate-db.mjs",
+    "test": "node --test tests/unit/*.test.js",
+    "test:e2e": "node --test tests/e2e/*.test.js",
+    "test:live": "node tests/live/live-app-smoke.mjs",
+    "test:voice": "powershell -NoProfile -ExecutionPolicy Bypass -File tests/live/windows-voice-smoke.ps1",
+    "test:db": "node --env-file-if-exists=.env tests/live/database-smoke.mjs",
+    "test:visual": "node tests/visual/capture.mjs",
+    "test:all": "npm test && npm run test:e2e && npm run test:voice && npm run test:db"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "playwright": "^1.54.2"
+  },
+  "dependencies": {
+    "pg": "^8.23.0"
+  }
+}

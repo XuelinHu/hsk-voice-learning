@@ -1,0 +1,18 @@
+node_modules/
+.env
+.env.*
+!.env.example
+test-results/
+*.log
+
+# 本机构建产物和缓存不发布到公开仓库
+dist/
+.gradle/
+.kotlin/
+.playwright-mcp/
+.tmp/
+*.key
+*.pem
+*.p12
+*.jks
+*.keystore
