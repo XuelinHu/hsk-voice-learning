@@ -14,6 +14,12 @@ const server = createAppServer({
       return '很好，这个表达很自然。\n【跟读句】你好，我想买一张去上海的火车票。\n【练习要求】注意“张”的声调，在“上海”后稍作停顿。';
     },
   },
+  store: {
+    async authenticate(username, password) {
+      if (username !== 'hskstudent' || password !== 'visual-test-password-491') return null;
+      return { id: 'student-001', username, displayName: '林晓语', role: 'student' };
+    },
+  },
 });
 await new Promise((resolveListen) => server.listen(0, '127.0.0.1', resolveListen));
 const baseUrl = `http://127.0.0.1:${server.address().port}`;
@@ -28,6 +34,8 @@ try {
     ]) {
       const page = await browser.newPage({ viewport });
       await page.goto(`${baseUrl}/${app}/`);
+      await page.getByLabel('账号').fill('hskstudent');
+      await page.getByLabel('密码').fill('visual-test-password-491');
       await page.getByRole('button', { name: '进入学习空间' }).click();
       await page.getByText('林晓语').waitFor();
       await page.getByPlaceholder('输入中文，按 Enter 发送').fill('你好，我想练习中文。');

@@ -21,6 +21,12 @@ before(async () => {
     tokenSecret: 'e2e-test-secret',
     aiConfigured: true,
     aiClient: { async chat() { return '你好！你的中文很自然。你今天想练习什么？'; } },
+    store: {
+      async authenticate(username, password) {
+        if (username !== 'hskstudent' || password !== 'e2e-test-password-491') return null;
+        return { id: 'student-001', username, displayName: '林晓语', role: 'student' };
+      },
+    },
   });
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   baseUrl = `http://127.0.0.1:${server.address().port}`;
@@ -85,7 +91,7 @@ async function login(page, path) {
   await installFakeSpeech(page);
   await page.goto(`${baseUrl}${path}`);
   await page.getByLabel('账号').fill('hskstudent');
-  await page.getByLabel('密码').fill('Hsk@2026');
+  await page.getByLabel('密码').fill('e2e-test-password-491');
   await page.getByRole('button', { name: '进入学习空间' }).click();
   await page.getByText('林晓语').waitFor();
 }

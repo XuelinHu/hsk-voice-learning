@@ -41,11 +41,27 @@ class ConversationHistory {
     required this.messages,
     this.level,
     this.scenario,
+    this.hasMore = false,
+    this.nextCursor,
   });
 
   final List<ChatMessage> messages;
   final int? level;
   final String? scenario;
+  final bool hasMore;
+  final ConversationCursor? nextCursor;
+}
+
+class ConversationCursor {
+  const ConversationCursor({
+    required this.conversationId,
+    required this.id,
+    required this.createdAt,
+  });
+
+  final String conversationId;
+  final String id;
+  final String createdAt;
 }
 
 abstract class CoachGateway {
@@ -68,7 +84,10 @@ abstract class CoachGateway {
     required List<ChatMessage> messages,
   });
 
-  Future<ConversationHistory> loadLatestConversation({required String token});
+  Future<ConversationHistory> loadLatestConversation({
+    required String token,
+    ConversationCursor? before,
+  });
 
   void resetConversation();
 }
@@ -167,16 +186,35 @@ class CoachApi implements CoachGateway {
   @override
   Future<ConversationHistory> loadLatestConversation({
     required String token,
+    ConversationCursor? before,
   }) async {
+    final query = <String, String>{'appId': clientApp, 'limit': '80'};
+    if (before != null) {
+      query.addAll(<String, String>{
+        'cursorConversationId': before.conversationId,
+        'cursorId': before.id,
+        'cursorCreatedAt': before.createdAt,
+      });
+    }
     final payload = await _get(
-      '/api/history/latest?appId=${Uri.encodeQueryComponent(clientApp)}',
+      '/api/history/latest?${Uri(queryParameters: query).query}',
       token: token,
     );
     _conversationId = payload['conversationId'] as String?;
     final rawMessages = payload['messages'] as List<dynamic>? ?? const [];
+    final rawCursor = payload['nextCursor'] as Map<String, dynamic>?;
+    final cursor = rawCursor == null
+        ? null
+        : ConversationCursor(
+            conversationId: rawCursor['conversationId'] as String? ?? '',
+            id: rawCursor['id']?.toString() ?? '',
+            createdAt: rawCursor['createdAt'] as String? ?? '',
+          );
     return ConversationHistory(
       level: payload['level'] as int?,
       scenario: payload['scenario'] as String?,
+      hasMore: payload['hasMore'] == true && cursor != null,
+      nextCursor: cursor,
       messages: rawMessages
           .whereType<Map<String, dynamic>>()
           .map(

@@ -4,7 +4,7 @@ import { createServer } from 'node:http';
 import { extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { authenticate, issueToken, verifyToken } from './auth.js';
+import { issueToken, verifyToken } from './auth.js';
 
 const PROJECT_ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const STATIC_ROUTES = [
@@ -108,9 +108,7 @@ export function createAppServer({
 
       if (request.method === 'POST' && pathname === '/api/login') {
         const body = await readJson(request);
-        const user = store?.authenticate
-          ? await store.authenticate(body.username, body.password)
-          : authenticate(body.username, body.password);
+        const user = await store?.authenticate?.(body.username, body.password);
         await store?.recordLogin?.({
           userId: user?.id,
           username: body.username,
@@ -214,11 +212,41 @@ export function createAppServer({
           sendJson(response, 401, { error: '登录已失效，请重新登录' });
           return;
         }
+        const rawLimit = url.searchParams.get('limit');
+        const limit = rawLimit == null ? 80 : Number(rawLimit);
+        if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
+          sendJson(response, 400, { error: '历史分页大小无效。' });
+          return;
+        }
+        const cursorParts = [
+          url.searchParams.get('cursorConversationId'),
+          url.searchParams.get('cursorId'),
+          url.searchParams.get('cursorCreatedAt'),
+        ];
+        const hasCursorPart = cursorParts.some((value) => value != null);
+        const [conversationId, id, createdAt] = cursorParts;
+        const validCursor = !hasCursorPart || (
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(conversationId || '')
+          && /^[1-9]\d{0,18}$/.test(id || '')
+          && BigInt(id) <= 9223372036854775807n
+          && Number.isFinite(Date.parse(createdAt || ''))
+        );
+        if (!validCursor) {
+          sendJson(response, 400, { error: '历史分页游标无效。' });
+          return;
+        }
         const history = await store?.getLatestConversation?.({
           userId: session.sub,
           clientApp: url.searchParams.get('appId'),
+          limit,
+          cursor: hasCursorPart ? { conversationId, id, createdAt } : null,
         });
-        sendJson(response, 200, history || { conversationId: null, messages: [] });
+        sendJson(response, 200, history || {
+          conversationId: null,
+          messages: [],
+          hasMore: false,
+          nextCursor: null,
+        });
         return;
       }
 

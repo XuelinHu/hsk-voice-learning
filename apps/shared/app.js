@@ -388,8 +388,6 @@ setInterval(() => {
   elements.duration.textContent = `${minutes}:${seconds}`;
 }, 1000);
 
-elements.username.value = 'hskstudent';
-elements.password.value = 'Hsk@2026';
 elements.voiceName.textContent = speech.getVoiceName();
 if (!speech.support.recognition || !speech.support.synthesis) {
   setVoiceStatus('部分语音能力不可用，请使用最新版 Edge 或 Chrome', 'error');

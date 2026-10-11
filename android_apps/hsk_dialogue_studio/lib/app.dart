@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
 import 'app_config.dart';
@@ -125,8 +126,8 @@ class _LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<_LoginPage> {
-  final _username = TextEditingController(text: 'hskstudent');
-  final _password = TextEditingController(text: 'Hsk@2026');
+  final _username = TextEditingController();
+  final _password = TextEditingController();
   bool _loading = false;
   String? _error;
 
@@ -270,17 +271,6 @@ class _LoginPageState extends State<_LoginPage> {
                     label: const Text('进入学习空间'),
                   ),
                   const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: widget.config.primary.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Text(
-                      '测试账号 hskstudent / Hsk@2026',
-                      style: TextStyle(fontSize: 12),
-                    ),
-                  ),
                   TextButton.icon(
                     onPressed: _editServer,
                     icon: const Icon(Icons.dns_outlined, size: 18),
@@ -324,8 +314,11 @@ class _ConversationPageState extends State<_ConversationPage> {
   bool _recording = false;
   bool _sending = false;
   bool _continuous = false;
+  bool _hasEarlierHistory = false;
+  bool _loadingEarlierHistory = false;
   String _status = '语音已就绪';
   String? _error;
+  ConversationCursor? _historyCursor;
 
   String get _scenario => widget.config.scenarios[_scenarioIndex];
 
@@ -351,6 +344,8 @@ class _ConversationPageState extends State<_ConversationPage> {
         _messages
           ..clear()
           ..addAll(history.messages);
+        _historyCursor = history.nextCursor;
+        _hasEarlierHistory = history.hasMore && history.nextCursor != null;
         if (history.level != null) _level = history.level!;
         final scenarioIndex = widget.config.scenarios.indexOf(
           history.scenario ?? '',
@@ -518,6 +513,69 @@ class _ConversationPageState extends State<_ConversationPage> {
     });
   }
 
+  bool _handleHistoryScroll(UserScrollNotification notification) {
+    if (notification.direction == ScrollDirection.forward &&
+        notification.metrics.extentBefore <= 48) {
+      unawaited(_loadEarlierHistory());
+    }
+    return false;
+  }
+
+  Future<void> _loadEarlierHistory() async {
+    final cursor = _historyCursor;
+    if (_loadingEarlierHistory || !_hasEarlierHistory || cursor == null) return;
+
+    final oldMaxExtent = _scroll.hasClients
+        ? _scroll.position.maxScrollExtent
+        : 0.0;
+    final oldPixels = _scroll.hasClients ? _scroll.position.pixels : 0.0;
+    var insertedMessages = false;
+    setState(() => _loadingEarlierHistory = true);
+    try {
+      final history = await widget.coach.loadLatestConversation(
+        token: widget.session.token,
+        before: cursor,
+      );
+      if (!mounted) return;
+      if (history.messages.isEmpty) {
+        setState(() {
+          _hasEarlierHistory = false;
+          _historyCursor = null;
+        });
+        return;
+      }
+      setState(() {
+        _messages.insertAll(0, history.messages);
+        _historyCursor = history.nextCursor;
+        _hasEarlierHistory = history.hasMore && history.nextCursor != null;
+      });
+      insertedMessages = true;
+    } on CoachApiException catch (error) {
+      if (mounted) {
+        setState(() {
+          _error = error.message;
+          _status = '历史加载失败';
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _loadingEarlierHistory = false);
+        await WidgetsBinding.instance.endOfFrame;
+        if (insertedMessages && _scroll.hasClients) {
+          final delta = _scroll.position.maxScrollExtent - oldMaxExtent;
+          _scroll.jumpTo(
+            (oldPixels + delta)
+                .clamp(
+                  _scroll.position.minScrollExtent,
+                  _scroll.position.maxScrollExtent,
+                )
+                .toDouble(),
+          );
+        }
+      }
+    }
+  }
+
   Future<void> _editServer() async {
     final controller = TextEditingController(text: widget.coach.baseUrl);
     final value = await showDialog<String>(
@@ -680,15 +738,33 @@ class _ConversationPageState extends State<_ConversationPage> {
               ),
             ),
             Expanded(
-              child: ListView.builder(
-                controller: _scroll,
-                padding: const EdgeInsets.fromLTRB(14, 16, 14, 12),
-                itemCount: _messages.length,
-                itemBuilder: (context, index) => _MessageBubble(
-                  message: _messages[index],
-                  primary: widget.config.primary,
-                  secondary: widget.config.secondary,
-                  speech: widget.speech,
+              child: NotificationListener<UserScrollNotification>(
+                onNotification: _handleHistoryScroll,
+                child: ListView.builder(
+                  controller: _scroll,
+                  padding: const EdgeInsets.fromLTRB(14, 16, 14, 12),
+                  itemCount:
+                      _messages.length +
+                      (_hasEarlierHistory || _loadingEarlierHistory ? 1 : 0),
+                  itemBuilder: (context, index) {
+                    final hasHeader =
+                        _hasEarlierHistory || _loadingEarlierHistory;
+                    if (hasHeader && index == 0) {
+                      return SizedBox(
+                        height: _loadingEarlierHistory ? 40 : 1,
+                        child: _loadingEarlierHistory
+                            ? const Center(child: CircularProgressIndicator())
+                            : null,
+                      );
+                    }
+                    final messageIndex = index - (hasHeader ? 1 : 0);
+                    return _MessageBubble(
+                      message: _messages[messageIndex],
+                      primary: widget.config.primary,
+                      secondary: widget.config.secondary,
+                      speech: widget.speech,
+                    );
+                  },
                 ),
               ),
             ),

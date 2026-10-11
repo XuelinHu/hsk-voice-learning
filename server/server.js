@@ -9,15 +9,19 @@ import { createWebServer } from './web-server.js';
 const host = process.env.HOST || '127.0.0.1';
 const port = Number(process.env.PORT || 8040);
 const webPort = Number(process.env.WEB_PORT || 4035);
-const apiKey = process.env.DASHSCOPE_API_KEY || '';
+const aiApiKey = process.env.AI_API_KEY || process.env.DASHSCOPE_API_KEY || '';
+const aiApiUrl = process.env.AI_BASE_URL || process.env.DASHSCOPE_API_URL;
+const aiModel = process.env.AI_MODEL || process.env.DASHSCOPE_MODEL || 'qwen-plus';
+const aiProviderName = process.env.AI_BASE_URL ? '局域网 AI' : '百炼';
 const tokenSecret = process.env.TOKEN_SECRET || randomBytes(32).toString('hex');
 const aiClient = createBailianClient({
-  apiKey,
-  apiUrl: process.env.DASHSCOPE_API_URL,
-  model: process.env.DASHSCOPE_MODEL || 'qwen-plus',
+  apiKey: aiApiKey,
+  apiUrl: aiApiUrl,
+  model: aiModel,
+  providerName: aiProviderName,
 });
 const asrClient = createBailianAsrClient({
-  apiKey,
+  apiKey: process.env.DASHSCOPE_API_KEY || '',
   apiUrl: process.env.DASHSCOPE_API_URL,
   model: process.env.DASHSCOPE_ASR_MODEL || 'qwen3-asr-flash',
 });
@@ -29,7 +33,7 @@ const server = createAppServer({
   aiClient,
   asrClient,
   store,
-  aiConfigured: Boolean(apiKey),
+  aiConfigured: Boolean(aiApiKey),
 });
 
 const webServer = createWebServer(port);
@@ -41,7 +45,7 @@ for (const listener of [server, webServer]) {
 }
 server.listen(port, host, () => {
   console.log(`HSK API: http://${host}:${port}`);
-  console.log(`AI configured: ${apiKey ? 'yes' : 'no'}`);
+  console.log(`AI configured: ${aiApiKey ? 'yes' : 'no'}`);
   console.log(`Database configured: ${store ? 'yes' : 'no'}`);
 });
 webServer.listen(webPort, host, () => {

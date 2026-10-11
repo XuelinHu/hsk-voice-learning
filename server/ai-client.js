@@ -47,12 +47,13 @@ export function createBailianClient({
   apiKey,
   apiUrl = DEFAULT_API_URL,
   model = 'qwen-plus',
+  providerName = '百炼',
   fetchImpl = globalThis.fetch,
   timeoutMs = 45_000,
 } = {}) {
   return {
     async chat(input) {
-      if (!apiKey) throw new Error('服务器尚未配置 DASHSCOPE_API_KEY');
+      if (!apiKey) throw new Error('服务器尚未配置 AI_API_KEY 或 DASHSCOPE_API_KEY');
       if (typeof fetchImpl !== 'function') throw new Error('当前 Node 运行时不支持 fetch');
 
       const response = await fetchImpl(apiUrl, {
@@ -78,13 +79,13 @@ export function createBailianClient({
         } catch {
           detail = '';
         }
-        throw new Error(detail || `百炼请求失败（HTTP ${response.status}）`);
+        throw new Error(detail || `${providerName}请求失败（HTTP ${response.status}）`);
       }
 
       const payload = await response.json();
       const reply = payload?.choices?.[0]?.message?.content;
       if (typeof reply !== 'string' || !reply.trim()) {
-        throw new Error('百炼返回了空回答');
+        throw new Error(`${providerName}返回了空回答`);
       }
       return reply.trim();
     },

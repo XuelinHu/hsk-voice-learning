@@ -1,32 +1,5 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
-const TEST_USERS = [
-  {
-    id: 'student-001',
-    username: 'hskstudent',
-    password: 'Hsk@2026',
-    displayName: '林晓语',
-    role: 'student',
-  },
-  {
-    id: 'teacher-001',
-    username: 'hskteacher',
-    password: 'Teacher@2026',
-    displayName: '周老师',
-    role: 'teacher',
-  },
-];
-
-export function authenticate(username, password) {
-  const normalizedUsername = String(username ?? '').trim().toLowerCase();
-  const user = TEST_USERS.find((candidate) => (
-    candidate.username === normalizedUsername && candidate.password === String(password ?? '')
-  ));
-  if (!user) return null;
-  const { password: _password, ...safeUser } = user;
-  return safeUser;
-}
-
 function sign(encodedPayload, secret) {
   return createHmac('sha256', secret).update(encodedPayload).digest('base64url');
 }
@@ -55,8 +28,4 @@ export function verifyToken(token, secret) {
   } catch {
     return null;
   }
-}
-
-export function getTestAccountSummary() {
-  return TEST_USERS.map(({ password, ...user }) => ({ ...user, password }));
 }

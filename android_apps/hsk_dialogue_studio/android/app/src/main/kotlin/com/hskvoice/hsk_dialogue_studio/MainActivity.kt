@@ -224,8 +224,8 @@ class MainActivity : FlutterActivity(), TextToSpeech.OnInitListener {
             result.error("recording_missing", "录音路径无效。", null)
             return
         }
-        val cacheRoot = cacheDir.canonicalFile
-        if (!file.path.startsWith(cacheRoot.path + File.separator) || !file.isFile) {
+        val recordingsRoot = File(filesDir, "hsk_recordings").canonicalFile
+        if (!file.path.startsWith(recordingsRoot.path + File.separator) || !file.isFile) {
             result.error("recording_missing", "录音文件不存在。", null)
             return
         }

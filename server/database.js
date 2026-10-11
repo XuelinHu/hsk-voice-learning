@@ -163,32 +163,66 @@ export function createPostgresStore(pool) {
       }
     },
 
-    async getLatestConversation({ userId, clientApp }) {
-      const conversation = await pool.query(
-        `SELECT id, hsk_level, scenario
-         FROM learning_conversations
-         WHERE user_id = $1 AND client_app = $2
-         ORDER BY last_active_at DESC LIMIT 1`,
-        [userId, normalizeApp(clientApp)],
-      );
+    async getLatestConversation({ userId, clientApp, limit = 80, cursor = null }) {
+      const pageSize = Number.isInteger(Number(limit))
+        ? Math.min(100, Math.max(1, Number(limit)))
+        : 80;
+      let conversation;
+      if (cursor) {
+        if (
+          !validUuid(cursor.conversationId)
+          || !/^[1-9]\d{0,18}$/.test(String(cursor.id))
+          || BigInt(cursor.id) > 9223372036854775807n
+          || !Number.isFinite(Date.parse(cursor.createdAt))
+        ) {
+          return null;
+        }
+        conversation = await pool.query(
+          `SELECT id, hsk_level, scenario
+           FROM learning_conversations
+           WHERE id = $1 AND user_id = $2 AND client_app = $3
+           LIMIT 1`,
+          [cursor.conversationId, userId, normalizeApp(clientApp)],
+        );
+      } else {
+        conversation = await pool.query(
+          `SELECT id, hsk_level, scenario
+           FROM learning_conversations
+           WHERE user_id = $1 AND client_app = $2
+           ORDER BY last_active_at DESC, id DESC LIMIT 1`,
+          [userId, normalizeApp(clientApp)],
+        );
+      }
       if (!conversation.rowCount) return null;
       const row = conversation.rows[0];
       const messages = await pool.query(
-        `SELECT role, content, source, created_at
-         FROM (
-           SELECT id, role, content, source, created_at
-           FROM conversation_messages
-           WHERE conversation_id = $1
-           ORDER BY created_at DESC, id DESC LIMIT 80
-         ) AS recent
-         ORDER BY created_at, id`,
-        [row.id],
+        `SELECT id::text AS id, role, content, source, created_at,
+                created_at::text AS cursor_created_at
+         FROM conversation_messages
+         WHERE conversation_id = $1
+           ${cursor ? 'AND (created_at, id) < ($2::timestamptz, $3::bigint)' : ''}
+         ORDER BY created_at DESC, id DESC
+         LIMIT $${cursor ? 4 : 2}`,
+        cursor
+          ? [row.id, cursor.createdAt, cursor.id, pageSize + 1]
+          : [row.id, pageSize + 1],
       );
+      const hasMore = messages.rows.length > pageSize;
+      const pageRows = messages.rows.slice(0, pageSize);
+      const oldest = pageRows.at(-1);
       return {
         conversationId: row.id,
         level: row.hsk_level,
         scenario: row.scenario,
-        messages: messages.rows.map((message) => ({
+        hasMore,
+        nextCursor: hasMore && oldest
+          ? {
+              conversationId: row.id,
+              id: oldest.id,
+              createdAt: oldest.cursor_created_at,
+            }
+          : null,
+        messages: pageRows.reverse().map((message) => ({
           role: message.role,
           content: message.content,
           source: message.source,

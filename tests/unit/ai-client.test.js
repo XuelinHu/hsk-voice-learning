@@ -50,3 +50,25 @@ test('百炼客户端使用兼容接口并返回回答', async () => {
   assert.match(captured.url, /dashscope\.aliyuncs\.com/);
   assert.equal(captured.options.headers.Authorization, 'Bearer unit-test-key');
 });
+
+test('可通过服务端配置连接局域网 OpenAI 兼容模型', async () => {
+  let captured;
+  const client = createBailianClient({
+    apiKey: 'lan-test-key',
+    apiUrl: 'http://192.168.1.9:11434/v1/chat/completions',
+    model: 'qwen2.5:14b',
+    providerName: '局域网 AI',
+    fetchImpl: async (url, options) => {
+      captured = { url, options };
+      return new Response(JSON.stringify({
+        choices: [{ message: { content: '继续练习这句话。' } }],
+      }), { status: 200, headers: { 'content-type': 'application/json' } });
+    },
+  });
+
+  const reply = await client.chat({ level: 3, scenario: '日常问候', messages: [] });
+
+  assert.equal(reply, '继续练习这句话。');
+  assert.equal(captured.url, 'http://192.168.1.9:11434/v1/chat/completions');
+  assert.equal(JSON.parse(captured.options.body).model, 'qwen2.5:14b');
+});

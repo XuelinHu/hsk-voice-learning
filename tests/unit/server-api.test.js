@@ -3,7 +3,9 @@ import test from 'node:test';
 
 import { createAppServer } from '../../server/app.js';
 
-async function withServer(run) {
+const TEST_PASSWORD = 'api-test-password-491';
+
+async function withServer(run, { history } = {}) {
   const calls = [];
   const persistenceCalls = [];
   const server = createAppServer({
@@ -24,7 +26,7 @@ async function withServer(run) {
     store: {
       async authenticate(username, password) {
         persistenceCalls.push(['authenticate', username]);
-        if (username !== 'hskstudent' || password !== 'Hsk@2026') return null;
+        if (username !== 'hskstudent' || password !== TEST_PASSWORD) return null;
         return {
           id: 'student-001',
           username: 'hskstudent',
@@ -43,8 +45,9 @@ async function withServer(run) {
         persistenceCalls.push(['saveChatTurn', input.userMessage]);
         return { conversationId: '11111111-1111-4111-8111-111111111111' };
       },
-      async getLatestConversation() {
-        return null;
+      async getLatestConversation(input) {
+        persistenceCalls.push(['getLatestConversation', input]);
+        return typeof history === 'function' ? history(input) : history ?? null;
       },
     },
   });
@@ -80,7 +83,7 @@ test('登录后才能调用 AI 对话接口', async () => {
     const login = await fetch(`${baseUrl}/api/login`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ username: 'hskstudent', password: 'Hsk@2026' }),
+      body: JSON.stringify({ username: 'hskstudent', password: TEST_PASSWORD }),
     });
     const session = await login.json();
     assert.equal(login.status, 200);
@@ -113,7 +116,7 @@ test('登录后可以提交 WAV 跟读录音进行联网转写', async () => {
     const login = await fetch(`${baseUrl}/api/login`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ username: 'hskstudent', password: 'Hsk@2026' }),
+      body: JSON.stringify({ username: 'hskstudent', password: TEST_PASSWORD }),
     });
     const session = await login.json();
     const response = await fetch(`${baseUrl}/api/transcribe`, {
@@ -162,7 +165,7 @@ test('登录后可以恢复最近一次文本会话', async () => {
     const login = await fetch(`http://127.0.0.1:${port}/api/login`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ username: 'hskstudent', password: 'Hsk@2026' }),
+      body: JSON.stringify({ username: 'hskstudent', password: TEST_PASSWORD }),
     });
     const session = await login.json();
     const response = await fetch(
@@ -177,4 +180,110 @@ test('登录后可以恢复最近一次文本会话', async () => {
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }
+});
+
+test('会话历史按游标稳定分页并绑定用户和应用', async () => {
+  const historyCalls = [];
+  const conversationId = '22222222-2222-4222-8222-222222222222';
+  const historyCursor = {
+    conversationId,
+    id: '100',
+    createdAt: '2026-10-11T02:00:00.123456Z',
+  };
+  await withServer(async (baseUrl, _calls, persistenceCalls) => {
+    const login = await fetch(`${baseUrl}/api/login`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ username: 'hskstudent', password: TEST_PASSWORD }),
+    });
+    const session = await login.json();
+    const firstUrl = new URL('/api/history/latest', baseUrl);
+    firstUrl.search = new URLSearchParams({
+      appId: 'com.hskvoice.hsk_dialogue_studio',
+      limit: '2',
+    }).toString();
+    const firstResponse = await fetch(firstUrl, {
+      headers: { authorization: `Bearer ${session.token}` },
+    });
+    const firstPage = await firstResponse.json();
+    assert.equal(firstResponse.status, 200);
+    assert.deepEqual(firstPage.messages.map((message) => message.content), ['第 1 页']);
+    assert.equal(firstPage.hasMore, true);
+    assert.deepEqual(firstPage.nextCursor, historyCursor);
+
+    const nextUrl = new URL('/api/history/latest', baseUrl);
+    nextUrl.search = new URLSearchParams({
+      appId: 'com.hskvoice.hsk_dialogue_studio',
+      limit: '2',
+      cursorConversationId: historyCursor.conversationId,
+      cursorId: historyCursor.id,
+      cursorCreatedAt: historyCursor.createdAt,
+    }).toString();
+    const nextResponse = await fetch(nextUrl, {
+      headers: { authorization: `Bearer ${session.token}` },
+    });
+    const nextPage = await nextResponse.json();
+    assert.equal(nextResponse.status, 200);
+    assert.deepEqual(nextPage.messages.map((message) => message.content), ['更早的消息']);
+    assert.equal(nextPage.hasMore, false);
+    assert.equal(nextPage.nextCursor, null);
+
+    const historyInputs = persistenceCalls
+      .filter(([name]) => name === 'getLatestConversation')
+      .map(([, input]) => input);
+    assert.deepEqual(historyInputs, [
+      {
+        userId: 'student-001',
+        clientApp: 'com.hskvoice.hsk_dialogue_studio',
+        limit: 2,
+        cursor: null,
+      },
+      {
+        userId: 'student-001',
+        clientApp: 'com.hskvoice.hsk_dialogue_studio',
+        limit: 2,
+        cursor: historyCursor,
+      },
+    ]);
+  }, {
+    history(input) {
+      historyCalls.push(input);
+      return input.cursor
+        ? {
+            conversationId,
+            messages: [{ role: 'user', content: '更早的消息' }],
+            hasMore: false,
+            nextCursor: null,
+          }
+        : {
+            conversationId,
+            messages: [{ role: 'user', content: '第 1 页' }],
+            hasMore: true,
+            nextCursor: historyCursor,
+          };
+    },
+  });
+  assert.equal(historyCalls.length, 2);
+});
+
+test('拒绝不完整游标和超过最大限制的历史查询', async () => {
+  await withServer(async (baseUrl) => {
+    const login = await fetch(`${baseUrl}/api/login`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ username: 'hskstudent', password: TEST_PASSWORD }),
+    });
+    const session = await login.json();
+    for (const query of ['cursorId=1', 'limit=101']) {
+      const response = await fetch(`${baseUrl}/api/history/latest?${query}`, {
+        headers: { authorization: `Bearer ${session.token}` },
+      });
+      assert.equal(response.status, 400);
+    }
+    const oversizedId = await fetch(
+      `${baseUrl}/api/history/latest?cursorConversationId=22222222-2222-4222-8222-222222222222&cursorId=9223372036854775808&cursorCreatedAt=2026-10-11T02%3A00%3A00.123456Z`,
+      { headers: { authorization: `Bearer ${session.token}` } },
+    );
+    assert.equal(oversizedId.status, 400);
+  });
 });
