@@ -179,13 +179,15 @@ try {
     }),
   });
   assert.equal(tokenResponse.status, 200, 'Keycloak code exchange failed');
-  const accessToken = (await tokenResponse.json()).access_token;
+  const tokenSet = await tokenResponse.json();
+  const accessToken = tokenSet.access_token;
   assert.ok(accessToken, 'Keycloak did not return an access token');
   try {
     await createOidcVerifier({ issuer, clientIds: [clientId] })(accessToken);
   } catch (error) {
     const claims = decodeJwt(accessToken);
-    throw new Error(`Live JWKS validation failed (${error.name}; ${error.code || error.message}; sub=${Boolean(claims.sub)}; username=${Boolean(claims.preferred_username)}; clientAllowed=${claims.azp === clientId})`);
+    const idClaims = tokenSet.id_token ? decodeJwt(tokenSet.id_token) : {};
+    throw new Error(`Live JWKS validation failed (${error.name}; ${error.code || error.message}; accessClaims=${Object.keys(claims).join(',')}; idTokenHasSubject=${Boolean(idClaims.sub)})`);
   }
 
   const loginResponseFromApi = await fetch(`${api}/api/auth/oidc`, {
