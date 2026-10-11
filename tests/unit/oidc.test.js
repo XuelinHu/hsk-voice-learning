@@ -35,7 +35,7 @@ test('OIDC verifier checks issuer, signature, and native client identity', async
       subject: 'subject-1', username: 'learner', displayName: '中文用户',
     });
     const wrongClient = await token({ preferred_username: 'learner', azp: 'other-app', aud: 'account' });
-    await assert.rejects(() => verifier(wrongClient), /OIDC_CLAIMS_INVALID/);
+    await assert.rejects(() => verifier(wrongClient), /OIDC_CLIENT_NOT_ALLOWED/);
     const wrongIssuer = await token({ iss: `${issuer}/wrong`, preferred_username: 'learner', azp: 'hsk-app', aud: 'account' });
     await assert.rejects(() => verifier(wrongIssuer));
     const idToken = await token({ preferred_username: 'learner', azp: 'hsk-app', aud: 'hsk-app' });
