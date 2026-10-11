@@ -243,12 +243,20 @@ try {
         idpUserId = (await response.json()).find((user) => user.username === username)?.id;
       }
       if (idpUserId) {
-        await fetch(`${keycloak}/admin/realms/front/users/${idpUserId}`, {
+        const deleted = await fetch(`${keycloak}/admin/realms/front/users/${idpUserId}`, {
           method: 'DELETE',
           headers: { authorization: `Bearer ${adminAccessToken}` },
         });
+        assert.ok(deleted.status === 204 || deleted.status === 404, 'Temporary Keycloak test user cleanup failed');
       }
     }
+    const leftovers = await pool.query(
+      `SELECT
+         (SELECT count(*) FROM app_users WHERE username = $1)
+         + (SELECT count(*) FROM login_events WHERE attempted_username = $1) AS count`,
+      [username],
+    );
+    assert.equal(Number(leftovers.rows[0].count), 0, 'HSK test data cleanup was incomplete');
   } finally {
     await pool.end();
   }
