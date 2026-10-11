@@ -89,6 +89,7 @@ try {
     headers: adminHeaders,
     body: JSON.stringify({
       username,
+      email: `${username}@example.invalid`,
       enabled: true,
       emailVerified: true,
       firstName: 'OIDC',
