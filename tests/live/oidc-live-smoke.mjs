@@ -119,7 +119,13 @@ try {
   const loginPage = await getFollowingRedirects(authorizationUrl);
   const loginHtml = await loginPage.text();
   if (loginPage.status !== 200) {
-    const message = loginHtml.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 360);
+    const message = loginHtml
+      .replace(/<script\b[\s\S]*?<\/script>/gi, ' ')
+      .replace(/<style\b[\s\S]*?<\/style>/gi, ' ')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 360);
     throw new Error(`Keycloak authorization page failed (HTTP ${loginPage.status}): ${message}`);
   }
   const formTag = loginHtml.match(/<form\b[^>]*id="kc-form-login"[^>]*>/i)?.[0];
