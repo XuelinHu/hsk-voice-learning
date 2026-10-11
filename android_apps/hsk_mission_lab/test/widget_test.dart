@@ -36,6 +36,22 @@ void main() {
     expect(passwordField.controller?.text, isEmpty);
   });
 
+  testWidgets('统一账号按钮触发OIDC登录并进入学习界面', (tester) async {
+    final coach = _FakeCoachGateway();
+    await tester.pumpWidget(HskVoiceApp(
+      config: missionLabConfig,
+      coachGateway: coach,
+      speechGateway: _FakeSpeechGateway(),
+    ));
+
+    await tester.tap(find.text('使用统一账号登录'));
+    await tester.pumpAndSettle();
+
+    expect(coach.oidcLoginCalls, 1);
+    expect(find.text('测试学员'), findsOneWidget);
+    expect(find.text('进入学习空间'), findsNothing);
+  });
+
   testWidgets('连续语音模式在教练朗读完成后自动开始录音', (tester) async {
     final speech = _FakeSpeechGateway();
     await tester.pumpWidget(
@@ -117,6 +133,7 @@ class _FakeCoachGateway implements CoachGateway {
   final List<ChatMessage> history;
   final List<ChatMessage> earlierHistory;
   int earlierHistoryLoads = 0;
+  int oidcLoginCalls = 0;
   @override
   String baseUrl = 'http://127.0.0.1:8040';
 
@@ -129,7 +146,12 @@ class _FakeCoachGateway implements CoachGateway {
 
   @override
   Future<LoginSession> loginWithOidc({required String issuer, required String clientId, required String redirectUrl}) async =>
-      const LoginSession(token: 'test-token', user: SessionUser(displayName: '测试学员', username: 'hskstudent'));
+      _oidcLogin();
+
+  Future<LoginSession> _oidcLogin() async {
+    oidcLoginCalls += 1;
+    return const LoginSession(token: 'test-token', user: SessionUser(displayName: '测试学员', username: 'hskstudent'));
+  }
 
   @override
   Future<String> chat({

@@ -27,7 +27,18 @@ npm start
 adb reverse tcp:8040 tcp:8040
 ```
 
-局域网独立使用时，在 APK 登录页点击“服务地址”，填写运行后端电脑的局域网地址，例如 `http://192.168.1.10:4035`，同时将后端 `HOST` 配置为 `0.0.0.0`。
+局域网独立使用时，APK 的服务地址应填写 `https://192.168.1.9:8040`；网页地址为 `https://192.168.1.9:4035/studio/` 或 `/mission/`。两端都要求后端证书由客户端信任，LAN 服务以 `HOST=0.0.0.0` 监听。
+
+跨应用登录使用 Keycloak OIDC 授权码 + PKCE：对话研习室 client 为 `hsk-dialogue-android`，口语任务站为 `hsk-mission-android`。LAN 部署的 API 使用 HTTPS 和开发 CA；生成 LAN 调试 APK 时：
+
+```powershell
+cd D:\workspace\front\hsk-voice-learning\android_apps\hsk_dialogue_studio
+flutter build apk --debug --dart-define=HSK_API_BASE_URL=https://192.168.1.9:8040
+cd ..\hsk_mission_lab
+flutter build apk --debug --dart-define=HSK_API_BASE_URL=https://192.168.1.9:8040
+```
+
+连接局域网前，客户端操作系统必须信任 `identity-service/tls/front-dev-ca.crt`；不要在 APK 中关闭证书校验。HSK 后端将 OIDC `sub` 映射到本地学生记录，两款 APK 因而使用同一 HSK 用户及学习历史。现存同名账号不会自动合并，需经管理员明确绑定。
 
 ## PostgreSQL 数据持久化
 
@@ -134,6 +145,7 @@ HOST=127.0.0.1
 npm test
 npm run test:e2e
 npm run test:live
+npm run test:live:oidc
 npm run test:voice
 npm run test:db
 npm run test:all
@@ -143,6 +155,7 @@ npm run test:visual
 - `npm test`：鉴权、令牌、HSK 提示词、长上下文裁剪、百炼合同、HTTP API、语音选择与朗读单元测试。
 - `npm run test:e2e`：两个页面的登录、文字对话、跟读录音回放、语音识别、AI 回复、Microsoft TTS、连续监听和原生 Edge 语音能力测试；需要已迁移的隔离测试数据库和单独创建的演示账号。
 - `npm run test:live`：服务启动且已配置百炼时，从两个真实页面各完成一次联网 AI 对话。
+- `npm run test:live:oidc`：以临时测试用户通过 Keycloak 授权码 + PKCE，完成 HSK API 登录、文本对话、历史读取，并在退出时删除测试用户和 HSK 测试记录；需要有效的 Keycloak bootstrap 管理员配置、PostgreSQL 和 HTTPS CA 信任。
 - `npm run test:voice`：使用 Windows Microsoft 中文 TTS 生成真实 WAV，再由 Microsoft 中文识别器转回文本，验证本机语音闭环。
 - `npm run test:db`：检查 PostgreSQL 表、测试账号和“只存转写文本、不存音频”的结构约束。
 - `npm run test:visual`：生成两个项目在桌面与移动端的页面截图到 `test-results/visual/`。
