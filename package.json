@@ -13,6 +13,7 @@
     "test": "node --test tests/unit/*.test.js",
     "test:e2e": "node --test tests/e2e/*.test.js",
     "test:live": "node tests/live/live-app-smoke.mjs",
+    "test:live:oidc": "node tests/live/oidc-live-smoke.mjs",
     "test:voice": "powershell -NoProfile -ExecutionPolicy Bypass -File tests/live/windows-voice-smoke.ps1",
     "test:db": "node --env-file-if-exists=.env tests/live/database-smoke.mjs",
     "test:db:backup": "node --env-file-if-exists=.env tests/live/pg-backup-smoke.mjs",
