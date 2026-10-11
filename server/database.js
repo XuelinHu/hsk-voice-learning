@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 
 import pg from 'pg';
 
@@ -91,6 +91,57 @@ export function createPostgresStore(pool) {
         displayName: row.display_name,
         role: row.role,
       };
+    },
+
+    async authenticateOidc({ subject, issuer, username, displayName }) {
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`hsk-oidc:${subject}`]);
+        const linked = await client.query(
+          `SELECT u.id, u.username, u.display_name, u.role
+           FROM hsk_oidc_identities i JOIN app_users u ON u.id = i.user_id
+           WHERE i.subject = $1 AND i.issuer = $2 AND u.is_active = true`,
+          [subject, issuer],
+        );
+        let user;
+        if (linked.rowCount) {
+          user = linked.rows[0];
+          await client.query('UPDATE app_users SET display_name = $2, updated_at = now() WHERE id = $1', [user.id, displayName]);
+        } else {
+          const collision = await client.query('SELECT 1 FROM app_users WHERE username = $1', [username]);
+          if (collision.rowCount) {
+            await client.query('ROLLBACK');
+            return { conflict: true };
+          }
+          const id = randomUUID();
+          const opaquePassword = randomBytes(48).toString('base64');
+          const created = await client.query(
+            `INSERT INTO app_users
+              (id, username, display_name, role, password_salt, password_hash)
+             VALUES ($1, $2, $3, 'student', $4, $5)
+             RETURNING id, username, display_name, role`,
+            [id, username, displayName, randomBytes(16).toString('base64'), opaquePassword],
+          );
+          user = created.rows[0];
+          await client.query(
+            'INSERT INTO hsk_oidc_identities (subject, user_id, issuer) VALUES ($1, $2, $3)',
+            [subject, id, issuer],
+          );
+        }
+        await client.query('COMMIT');
+        return {
+          id: user.id,
+          username: user.username,
+          displayName: user.display_name,
+          role: user.role,
+        };
+      } catch (error) {
+        await client.query('ROLLBACK').catch(() => {});
+        throw error;
+      } finally {
+        client.release();
+      }
     },
 
     async recordLogin({ userId, username, success, clientApp, remoteAddress }) {

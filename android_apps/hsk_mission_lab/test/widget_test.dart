@@ -128,6 +128,10 @@ class _FakeCoachGateway implements CoachGateway {
       );
 
   @override
+  Future<LoginSession> loginWithOidc({required String issuer, required String clientId, required String redirectUrl}) async =>
+      const LoginSession(token: 'test-token', user: SessionUser(displayName: '测试学员', username: 'hskstudent'));
+
+  @override
   Future<String> chat({
     required String token,
     required int level,

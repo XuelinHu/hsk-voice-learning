@@ -159,6 +159,25 @@ class _LoginPageState extends State<_LoginPage> {
     }
   }
 
+  Future<void> _loginWithSso() async {
+    if (_loading) return;
+    setState(() { _loading = true; _error = null; });
+    try {
+      final session = await widget.coach.loginWithOidc(
+        issuer: widget.config.oidcIssuer,
+        clientId: widget.config.oidcClientId,
+        redirectUrl: widget.config.oidcRedirectUrl,
+      );
+      if (mounted) widget.onLoggedIn(session);
+    } on CoachApiException catch (error) {
+      if (mounted) setState(() => _error = error.message);
+    } catch (error) {
+      if (mounted) setState(() => _error = '统一登录失败：$error');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
   Future<void> _editServer() async {
     final controller = TextEditingController(text: widget.coach.baseUrl);
     final value = await showDialog<String>(
@@ -232,6 +251,14 @@ class _LoginPageState extends State<_LoginPage> {
                   const SizedBox(height: 6),
                   Text(widget.config.subtitle),
                   const SizedBox(height: 30),
+                  FilledButton.icon(
+                    onPressed: _loading ? null : _loginWithSso,
+                    icon: const Icon(Icons.key),
+                    label: const Text('使用统一账号登录'),
+                  ),
+                  const SizedBox(height: 18),
+                  const Divider(),
+                  const SizedBox(height: 12),
                   TextField(
                     controller: _username,
                     autofillHints: const <String>[AutofillHints.username],

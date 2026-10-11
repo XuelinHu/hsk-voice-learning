@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter_appauth/flutter_appauth.dart';
 
 class SessionUser {
   const SessionUser({required this.displayName, required this.username});
@@ -70,6 +71,12 @@ abstract class CoachGateway {
 
   Future<LoginSession> login(String username, String password);
 
+  Future<LoginSession> loginWithOidc({
+    required String issuer,
+    required String clientId,
+    required String redirectUrl,
+  });
+
   Future<String> transcribe({
     required String token,
     required List<int> wavBytes,
@@ -101,6 +108,7 @@ class CoachApi implements CoachGateway {
   @override
   String baseUrl;
   final String clientApp;
+  final FlutterAppAuth _appAuth = const FlutterAppAuth();
   String? _conversationId;
 
   @override
@@ -121,6 +129,43 @@ class CoachApi implements CoachGateway {
       user: SessionUser(
         displayName: user['displayName'] as String? ?? username,
         username: user['username'] as String? ?? username,
+      ),
+    );
+  }
+
+  @override
+  Future<LoginSession> loginWithOidc({
+    required String issuer,
+    required String clientId,
+    required String redirectUrl,
+  }) async {
+    final result = await _appAuth.authorizeAndExchangeCode(
+      AuthorizationTokenRequest(
+        clientId,
+        redirectUrl,
+        issuer: issuer,
+        scopes: const <String>['openid', 'profile'],
+      ),
+    );
+    final accessToken = result.accessToken;
+    if (accessToken == null || accessToken.isEmpty) {
+      throw const CoachApiException('统一登录未返回访问令牌。');
+    }
+    final payload = await _post('/api/auth/oidc', <String, Object?>{
+      'accessToken': accessToken,
+      'appId': clientApp,
+    });
+    final user = payload['user'] as Map<String, dynamic>?;
+    final token = payload['token'] as String?;
+    if (user == null || token == null || token.isEmpty) {
+      throw const CoachApiException('统一登录服务返回格式异常。');
+    }
+    _conversationId = null;
+    return LoginSession(
+      token: token,
+      user: SessionUser(
+        displayName: user['displayName'] as String? ?? '用户',
+        username: user['username'] as String? ?? '',
       ),
     );
   }

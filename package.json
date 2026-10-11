@@ -26,6 +26,7 @@
     "playwright": "^1.54.2"
   },
   "dependencies": {
+    "jose": "^6.2.12",
     "pg": "^8.23.0"
   }
 }

@@ -81,6 +81,8 @@ export function createAppServer({
   asrClient = null,
   store = null,
   aiConfigured = false,
+  oidcVerifier = null,
+  oidcIssuer = '',
 } = {}) {
   if (!tokenSecret) throw new Error('createAppServer requires tokenSecret');
   if (!aiClient?.chat) throw new Error('createAppServer requires aiClient.chat');
@@ -120,6 +122,39 @@ export function createAppServer({
           sendJson(response, 401, { error: '账号或密码错误' });
           return;
         }
+        sendJson(response, 200, { user, token: issueToken(user, tokenSecret) });
+        return;
+      }
+
+      if (request.method === 'POST' && pathname === '/api/auth/oidc') {
+        if (!oidcVerifier || !store?.authenticateOidc) {
+          sendJson(response, 503, { error: '统一登录尚未配置' });
+          return;
+        }
+        const body = await readJson(request);
+        let identity;
+        try {
+          identity = await oidcVerifier(String(body.accessToken || ''));
+        } catch {
+          sendJson(response, 401, { error: '统一登录令牌无效或已过期' });
+          return;
+        }
+        const user = await store.authenticateOidc({ ...identity, issuer: oidcIssuer });
+        if (user?.conflict) {
+          sendJson(response, 409, { error: '该用户名已存在，请先完成管理员身份绑定' });
+          return;
+        }
+        if (!user) {
+          sendJson(response, 403, { error: '该统一身份未关联有效用户' });
+          return;
+        }
+        await store.recordLogin?.({
+          userId: user.id,
+          username: user.username,
+          success: true,
+          clientApp: body.appId,
+          remoteAddress: request.socket.remoteAddress,
+        });
         sendJson(response, 200, { user, token: issueToken(user, tokenSecret) });
         return;
       }

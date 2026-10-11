@@ -5,6 +5,7 @@ import { createBailianAsrClient } from './asr-client.js';
 import { createAppServer } from './app.js';
 import { createDatabasePool, createPostgresStore } from './database.js';
 import { createWebServer } from './web-server.js';
+import { createOidcVerifier } from './oidc.js';
 
 const host = process.env.HOST || '127.0.0.1';
 const port = Number(process.env.PORT || 8040);
@@ -28,12 +29,19 @@ const asrClient = createBailianAsrClient({
 const databasePool = createDatabasePool();
 const store = databasePool ? createPostgresStore(databasePool) : null;
 await store?.ping();
+const oidcIssuer = (process.env.OIDC_ISSUER || '').replace(/\/$/, '');
+const oidcVerifier = createOidcVerifier({
+  issuer: oidcIssuer,
+  clientIds: (process.env.OIDC_CLIENT_IDS || '').split(',').map((value) => value.trim()).filter(Boolean),
+});
 const server = createAppServer({
   tokenSecret,
   aiClient,
   asrClient,
   store,
   aiConfigured: Boolean(aiApiKey),
+  oidcVerifier,
+  oidcIssuer,
 });
 
 const webServer = createWebServer(port);

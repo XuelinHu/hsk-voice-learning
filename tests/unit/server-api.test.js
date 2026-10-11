@@ -60,6 +60,69 @@ async function withServer(run, { history } = {}) {
   }
 }
 
+test('OIDC 登录只接受已验证身份并签发 HSK 本地会话', async () => {
+  const oidcInputs = [];
+  const server = createAppServer({
+    tokenSecret: 'oidc-test-secret',
+    aiClient: { async chat() { return '好的。'; } },
+    oidcIssuer: 'https://identity.example/realms/front',
+    oidcVerifier: async (token) => {
+      assert.equal(token, 'verified-access-token');
+      return { subject: 'idp-sub-1', username: 'current-user', displayName: '当前用户' };
+    },
+    store: {
+      async authenticateOidc(input) {
+        oidcInputs.push(input);
+        return { id: 'hsk-user-1', username: input.username, displayName: input.displayName, role: 'student' };
+      },
+      async recordLogin(input) { oidcInputs.push(input); },
+    },
+  });
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  try {
+    const response = await fetch(`http://127.0.0.1:${server.address().port}/api/auth/oidc`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ accessToken: 'verified-access-token', appId: 'hsk-mobile' }),
+    });
+    const body = await response.json();
+    assert.equal(response.status, 200);
+    assert.equal(body.user.id, 'hsk-user-1');
+    assert.equal(body.user.role, 'student');
+    assert.equal(typeof body.token, 'string');
+    assert.deepEqual(oidcInputs[0], {
+      subject: 'idp-sub-1',
+      username: 'current-user',
+      displayName: '当前用户',
+      issuer: 'https://identity.example/realms/front',
+    });
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test('OIDC 登录拒绝无效令牌且不调用用户存储', async () => {
+  let storeCalls = 0;
+  const server = createAppServer({
+    tokenSecret: 'oidc-invalid-test',
+    aiClient: { async chat() { return '好的。'; } },
+    oidcVerifier: async () => { throw new Error('invalid'); },
+    store: { async authenticateOidc() { storeCalls += 1; } },
+  });
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  try {
+    const response = await fetch(`http://127.0.0.1:${server.address().port}/api/auth/oidc`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ accessToken: 'forged' }),
+    });
+    assert.equal(response.status, 401);
+    assert.equal(storeCalls, 0);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
 test('健康检查只返回配置状态，不返回密钥', async () => {
   await withServer(async (baseUrl) => {
     const response = await fetch(`${baseUrl}/api/health`);

@@ -5,6 +5,9 @@ class HskAppConfig {
     required this.title,
     required this.subtitle,
     required this.applicationId,
+    required this.oidcClientId,
+    required this.oidcRedirectUrl,
+    required this.oidcIssuer,
     required this.primary,
     required this.secondary,
     required this.isMission,
@@ -14,6 +17,9 @@ class HskAppConfig {
   final String title;
   final String subtitle;
   final String applicationId;
+  final String oidcClientId;
+  final String oidcRedirectUrl;
+  final String oidcIssuer;
   final Color primary;
   final Color secondary;
   final bool isMission;
@@ -24,6 +30,9 @@ const missionLabConfig = HskAppConfig(
   title: 'HSK 口语任务站',
   subtitle: '用真实任务推进中文表达',
   applicationId: 'com.hskvoice.hsk_mission_lab',
+  oidcClientId: 'hsk-mission-lab-android',
+  oidcRedirectUrl: 'hskmissionlab:/oauth2redirect',
+  oidcIssuer: 'https://192.168.1.9:8042/realms/front',
   primary: Color(0xFFD4483F),
   secondary: Color(0xFFE5B931),
   isMission: true,
