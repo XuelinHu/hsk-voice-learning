@@ -32,7 +32,7 @@ const missionLabConfig = HskAppConfig(
   title: 'HSK 口语任务站',
   subtitle: '用真实任务推进中文表达',
   applicationId: 'com.hskvoice.hsk_mission_lab',
-  oidcClientId: 'hsk-mission-lab-android',
+  oidcClientId: 'hsk-mission-android',
   oidcRedirectUrl: 'hskmissionlab:/oauth2redirect',
   oidcIssuer: 'https://192.168.1.9:8042/realms/front',
   apiBaseUrl: String.fromEnvironment('HSK_API_BASE_URL', defaultValue: 'http://127.0.0.1:8040'),

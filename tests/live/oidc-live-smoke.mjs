@@ -6,7 +6,7 @@ import pg from 'pg';
 const issuer = (process.env.OIDC_ISSUER || 'https://192.168.1.9:8042/realms/front').replace(/\/$/, '');
 const keycloak = issuer.replace(/\/realms\/[^/]+$/, '');
 const api = (process.env.HSK_API_URL || 'https://192.168.1.9:8040').replace(/\/$/, '');
-const clientId = process.env.OIDC_TEST_CLIENT_ID || 'hsk-dialogue-studio-android';
+const clientId = process.env.OIDC_TEST_CLIENT_ID || 'hsk-dialogue-android';
 const redirectUri = process.env.OIDC_TEST_REDIRECT_URI || 'hskdialoguestudio:/oauth2redirect';
 const username = `oidc-smoke-${randomBytes(5).toString('hex')}`;
 const password = `Smoke-${randomBytes(5).toString('hex')}9`;

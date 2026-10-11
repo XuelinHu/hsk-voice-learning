@@ -32,7 +32,7 @@ const dialogueStudioConfig = HskAppConfig(
   title: 'HSK 对话研习室',
   subtitle: '沉浸式中文场景会话',
   applicationId: 'com.hskvoice.hsk_dialogue_studio',
-  oidcClientId: 'hsk-dialogue-studio-android',
+  oidcClientId: 'hsk-dialogue-android',
   oidcRedirectUrl: 'hskdialoguestudio:/oauth2redirect',
   oidcIssuer: 'https://192.168.1.9:8042/realms/front',
   apiBaseUrl: String.fromEnvironment('HSK_API_BASE_URL', defaultValue: 'http://127.0.0.1:8040'),
