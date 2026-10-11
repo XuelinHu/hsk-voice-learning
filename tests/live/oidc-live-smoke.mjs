@@ -117,8 +117,11 @@ try {
     code_challenge_method: 'S256',
   });
   const loginPage = await getFollowingRedirects(authorizationUrl);
-  assert.equal(loginPage.status, 200, 'Keycloak did not show the test-user login page');
   const loginHtml = await loginPage.text();
+  if (loginPage.status !== 200) {
+    const message = loginHtml.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 360);
+    throw new Error(`Keycloak authorization page failed (HTTP ${loginPage.status}): ${message}`);
+  }
   const formTag = loginHtml.match(/<form\b[^>]*id="kc-form-login"[^>]*>/i)?.[0];
   const actionRaw = formTag?.match(/\baction="([^"]+)"/i)?.[1];
   assert.ok(actionRaw, 'Keycloak login form action was not found');
