@@ -3,6 +3,7 @@ import { randomBytes, randomUUID, createHash } from 'node:crypto';
 
 import pg from 'pg';
 import { decodeJwt } from 'jose';
+import { createOidcVerifier } from '../../server/oidc.js';
 
 const issuer = (process.env.OIDC_ISSUER || 'https://192.168.1.9:8042/realms/front').replace(/\/$/, '');
 const keycloak = issuer.replace(/\/realms\/[^/]+$/, '');
@@ -180,6 +181,11 @@ try {
   assert.equal(tokenResponse.status, 200, 'Keycloak code exchange failed');
   const accessToken = (await tokenResponse.json()).access_token;
   assert.ok(accessToken, 'Keycloak did not return an access token');
+  try {
+    await createOidcVerifier({ issuer, clientIds: [clientId] })(accessToken);
+  } catch (error) {
+    throw new Error(`Live JWKS validation failed (${error.name}; ${error.code || error.message})`);
+  }
 
   const loginResponseFromApi = await fetch(`${api}/api/auth/oidc`, {
     method: 'POST',
