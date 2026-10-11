@@ -7,12 +7,15 @@
   "scripts": {
     "start": "node --env-file-if-exists=.env server/server.js",
     "db:migrate": "node --env-file-if-exists=.env scripts/migrate-db.mjs",
+    "db:backup": "node --env-file-if-exists=.env scripts/pg-backup.mjs backup",
+    "db:restore": "node --env-file-if-exists=.env scripts/pg-backup.mjs restore",
     "db:seed:demo": "node --env-file-if-exists=.env scripts/seed-demo-users.mjs",
     "test": "node --test tests/unit/*.test.js",
     "test:e2e": "node --test tests/e2e/*.test.js",
     "test:live": "node tests/live/live-app-smoke.mjs",
     "test:voice": "powershell -NoProfile -ExecutionPolicy Bypass -File tests/live/windows-voice-smoke.ps1",
     "test:db": "node --env-file-if-exists=.env tests/live/database-smoke.mjs",
+    "test:db:backup": "node --env-file-if-exists=.env tests/live/pg-backup-smoke.mjs",
     "test:visual": "node tests/visual/capture.mjs",
     "test:all": "npm test && npm run test:e2e && npm run test:voice && npm run test:db"
   },

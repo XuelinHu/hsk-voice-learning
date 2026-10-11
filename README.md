@@ -31,6 +31,21 @@ npm run db:migrate
 npm run test:db
 ```
 
+数据库快照使用 PostgreSQL `pg_dump` custom 格式，并以 AES-256-GCM 加密。先在 `.env` 设置独立的 32 字节随机密钥 `DB_BACKUP_ENCRYPTION_KEY`（64 位十六进制），不要提交该值；备份默认写入被 Git 忽略的 `backups/`：
+
+```powershell
+npm run db:backup
+npm run db:backup -- --destination D:\secure-backups\hsk.pgbak
+```
+
+恢复命令只接受已存在且以 `_test` 结尾的目标数据库，并要求显式 `--replace`；恢复前会先验证整个加密快照，目标内对象会被替换。源库和目标库名必须不同。先确认 `.env` 中的 PostgreSQL 主机、端口、用户和密码适用于目标环境，再执行：
+
+```powershell
+npm run db:restore -- --source D:\secure-backups\hsk.pgbak --database hsk_voice_learning_restore_test --replace
+```
+
+仅在隔离测试库演练恢复；不要把生产数据恢复到生产库。恢复需要 PostgreSQL 18 客户端工具 `pg_restore`。
+
 数据库保存用户、登录审计、HSK 会话、用户/AI 文本消息和语音转写文本。手机录音始终保存在 APK 的应用私有文件目录，后端只记录转写文本、语言和音频字节数，不上传或保存录音文件及手机路径。
 
 两套 APK 使用不同的 `client_app` 隔离最近会话；登录后会自动恢复各自最近一次文本对话，点击“开始新会话”后生成新的会话链路。
