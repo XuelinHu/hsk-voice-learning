@@ -1,5 +1,11 @@
 # hsk_dialogue_studio
 
+<p align="center">
+  <img height="20" alt="Flutter" src="https://img.shields.io/badge/flutter-used-02569B" />
+  <img height="20" alt="Dart SDK 3.11.4+" src="https://img.shields.io/badge/dart-3.11.4%2B-0175C2" />
+  <img height="20" alt="Android AppAuth OIDC PKCE" src="https://img.shields.io/badge/Android_AppAuth-OIDC_PKCE-3DDC84" />
+</p>
+
 A new Flutter project.
 
 ## Getting Started
