@@ -201,11 +201,19 @@ try {
   try {
     await pool.query('DELETE FROM login_events WHERE attempted_username = $1', [username]);
     await pool.query('DELETE FROM app_users WHERE username = $1', [username]);
-    if (testUserCreated && idpUserId && adminAccessToken) {
-      await fetch(`${keycloak}/admin/realms/front/users/${idpUserId}`, {
-        method: 'DELETE',
-        headers: { authorization: `Bearer ${adminAccessToken}` },
-      });
+    if (testUserCreated && adminAccessToken) {
+      if (!idpUserId) {
+        const response = await fetch(`${keycloak}/admin/realms/front/users?username=${encodeURIComponent(username)}&exact=true`, {
+          headers: { authorization: `Bearer ${adminAccessToken}` },
+        });
+        idpUserId = (await response.json()).find((user) => user.username === username)?.id;
+      }
+      if (idpUserId) {
+        await fetch(`${keycloak}/admin/realms/front/users/${idpUserId}`, {
+          method: 'DELETE',
+          headers: { authorization: `Bearer ${adminAccessToken}` },
+        });
+      }
     }
   } finally {
     await pool.end();
