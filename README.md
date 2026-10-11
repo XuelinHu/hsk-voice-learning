@@ -1,5 +1,12 @@
 # HSK Voice Learning
 
+<p align="center">
+  <img height="20" alt="Node.js 20+" src="https://img.shields.io/badge/node.js-20%2B-339933" />
+  <img height="20" alt="PostgreSQL configured" src="https://img.shields.io/badge/postgresql-configured-4169E1" />
+  <img height="20" alt="Flutter" src="https://img.shields.io/badge/flutter-used-02569B" />
+  <img height="20" alt="Dart SDK 3.11.4+" src="https://img.shields.io/badge/dart-3.11.4%2B-0175C2" />
+</p>
+
 两个平行、可独立使用的 HSK 中文语音学习项目：
 
 - **HSK 对话研习室**：安静、连续的场景对话训练，适合长时间口语练习。
@@ -25,6 +32,13 @@ adb reverse tcp:8040 tcp:8040
 ## PostgreSQL 数据持久化
 
 后端使用独立数据库 `hsk_voice_learning`。首次部署或迁移时执行：
+
+先由 PostgreSQL 管理员在目标实例运行 `server/postgres/provision-role.psql`，按提示创建 HSK 专属数据库与 `hsk_voice_learning_app` 角色，并在 `.env` 配置角色的独立口令。HSK 对话研习室和口语任务站共用该服务端数据库；应用角色没有创建其他数据库或角色的权限。已存在但所有者不是该角色的同名数据库会被脚本拒绝，需先人工核验。Windows 本机 PostgreSQL 18 的示例命令如下；将管理员角色改为本机实际配置，口令由 `psql` 交互读取：
+
+```powershell
+$pgAdmin = Read-Host 'PostgreSQL 管理员角色'
+& 'C:\Program Files\PostgreSQL\18\bin\psql.exe' -h 127.0.0.1 -p 5432 -U $pgAdmin -d postgres -f server/postgres/provision-role.psql
+```
 
 ```powershell
 npm run db:migrate
