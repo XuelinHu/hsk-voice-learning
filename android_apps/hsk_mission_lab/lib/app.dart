@@ -65,7 +65,7 @@ class HskVoiceApp extends StatelessWidget {
       ),
       home: _AppRoot(
         config: config,
-        coach: coachGateway ?? CoachApi(clientApp: config.applicationId),
+        coach: coachGateway ?? CoachApi(baseUrl: config.apiBaseUrl, clientApp: config.applicationId),
         speech: speechGateway ?? NativeSpeechService(),
       ),
     );
@@ -187,7 +187,7 @@ class _LoginPageState extends State<_LoginPage> {
         content: TextField(
           controller: controller,
           keyboardType: TextInputType.url,
-          decoration: const InputDecoration(hintText: 'http://127.0.0.1:8040'),
+          decoration: InputDecoration(hintText: widget.config.apiBaseUrl),
         ),
         actions: <Widget>[
           TextButton(

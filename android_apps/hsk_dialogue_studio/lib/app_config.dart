@@ -8,6 +8,7 @@ class HskAppConfig {
     required this.oidcClientId,
     required this.oidcRedirectUrl,
     required this.oidcIssuer,
+    required this.apiBaseUrl,
     required this.primary,
     required this.secondary,
     required this.isMission,
@@ -20,6 +21,7 @@ class HskAppConfig {
   final String oidcClientId;
   final String oidcRedirectUrl;
   final String oidcIssuer;
+  final String apiBaseUrl;
   final Color primary;
   final Color secondary;
   final bool isMission;
@@ -33,6 +35,7 @@ const dialogueStudioConfig = HskAppConfig(
   oidcClientId: 'hsk-dialogue-studio-android',
   oidcRedirectUrl: 'hskdialoguestudio:/oauth2redirect',
   oidcIssuer: 'https://192.168.1.9:8042/realms/front',
+  apiBaseUrl: String.fromEnvironment('HSK_API_BASE_URL', defaultValue: 'http://127.0.0.1:8040'),
   primary: Color(0xFF176B4B),
   secondary: Color(0xFFE06E43),
   isMission: false,

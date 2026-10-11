@@ -1,9 +1,10 @@
 import { createServer, request } from 'node:http';
+import { createServer as createSecureServer, request as secureRequest } from 'node:https';
 
-export function createWebServer(apiPort) {
-  return createServer((incoming, outgoing) => {
-    const upstream = request({
-      hostname: '127.0.0.1',
+export function createWebServer(apiPort, { tlsOptions = null, apiTls = false, apiHost = '127.0.0.1' } = {}) {
+  const handler = (incoming, outgoing) => {
+    const upstream = (apiTls ? secureRequest : request)({
+      hostname: apiHost,
       port: apiPort,
       path: incoming.url,
       method: incoming.method,
@@ -25,5 +26,6 @@ export function createWebServer(apiPort) {
       if (!outgoing.writableEnded) upstream.destroy();
     });
     incoming.pipe(upstream);
-  });
+  };
+  return tlsOptions ? createSecureServer(tlsOptions, handler) : createServer(handler);
 }

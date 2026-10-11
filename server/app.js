@@ -1,6 +1,7 @@
 import { createReadStream } from 'node:fs';
 import { stat } from 'node:fs/promises';
 import { createServer } from 'node:http';
+import { createServer as createSecureServer } from 'node:https';
 import { extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -83,11 +84,12 @@ export function createAppServer({
   aiConfigured = false,
   oidcVerifier = null,
   oidcIssuer = '',
+  tlsOptions = null,
 } = {}) {
   if (!tokenSecret) throw new Error('createAppServer requires tokenSecret');
   if (!aiClient?.chat) throw new Error('createAppServer requires aiClient.chat');
 
-  return createServer(async (request, response) => {
+  const handler = async (request, response) => {
     response.setHeader('X-Content-Type-Options', 'nosniff');
     response.setHeader('Referrer-Policy', 'same-origin');
     response.setHeader('Permissions-Policy', 'microphone=(self)');
@@ -301,5 +303,6 @@ export function createAppServer({
         : String(error?.message || '服务器暂时不可用').replace(/sk-[a-zA-Z0-9]+/g, '[已隐藏]');
       sendJson(response, 502, { error: safeMessage });
     }
-  });
+  };
+  return tlsOptions ? createSecureServer(tlsOptions, handler) : createServer(handler);
 }
