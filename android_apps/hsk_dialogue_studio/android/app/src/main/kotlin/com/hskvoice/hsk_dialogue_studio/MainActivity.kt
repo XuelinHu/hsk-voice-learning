@@ -20,9 +20,6 @@ import java.util.Locale
 class MainActivity : FlutterActivity(), TextToSpeech.OnInitListener {
     private val channelName = "com.hskvoice/speech"
     private val microphoneRequestCode = 5201
-    private val maxRecordingFiles = 20
-    private val maxRecordingBytes = 40L * 1024 * 1024
-    private val recordingRetentionMs = 7L * 24 * 60 * 60 * 1000
     private var textToSpeech: TextToSpeech? = null
     private var ttsReady = false
     private var pendingSpeakResult: MethodChannel.Result? = null
@@ -222,22 +219,8 @@ class MainActivity : FlutterActivity(), TextToSpeech.OnInitListener {
         result.success(mapOf("bytes" to wav, "path" to file.absolutePath))
     }
 
-    private fun pruneRecordings(now: Long = System.currentTimeMillis()) {
-        val directory = File(filesDir, "hsk_recordings")
-        val files = directory.listFiles { file ->
-            file.isFile && file.name.matches(Regex("practice_\\d+\\.wav"))
-        }?.sortedBy { it.lastModified() } ?: return
-        var totalBytes = files.sumOf { it.length() }
-        var remainingFiles = files.size
-        for (file in files) {
-            val expired = now - file.lastModified() > recordingRetentionMs
-            if (!expired && remainingFiles <= maxRecordingFiles && totalBytes <= maxRecordingBytes) break
-            val fileBytes = file.length()
-            if (file.delete()) {
-                totalBytes -= fileBytes
-                remainingFiles -= 1
-            }
-        }
+    private fun pruneRecordings() {
+        RecordingRetention.prune(File(filesDir, "hsk_recordings"))
     }
 
     private fun playRecording(path: String?, result: MethodChannel.Result) {
