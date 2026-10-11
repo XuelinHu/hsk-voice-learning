@@ -184,7 +184,8 @@ try {
   try {
     await createOidcVerifier({ issuer, clientIds: [clientId] })(accessToken);
   } catch (error) {
-    throw new Error(`Live JWKS validation failed (${error.name}; ${error.code || error.message})`);
+    const claims = decodeJwt(accessToken);
+    throw new Error(`Live JWKS validation failed (${error.name}; ${error.code || error.message}; sub=${Boolean(claims.sub)}; username=${Boolean(claims.preferred_username)}; clientAllowed=${claims.azp === clientId})`);
   }
 
   const loginResponseFromApi = await fetch(`${api}/api/auth/oidc`, {
