@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { randomBytes, randomUUID, createHash } from 'node:crypto';
 
 import pg from 'pg';
+import { decodeJwt } from 'jose';
 
 const issuer = (process.env.OIDC_ISSUER || 'https://192.168.1.9:8042/realms/front').replace(/\/$/, '');
 const keycloak = issuer.replace(/\/realms\/[^/]+$/, '');
@@ -185,7 +186,10 @@ try {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ accessToken, appId: 'com.hskvoice.hsk_dialogue_studio' }),
   });
-  assert.equal(loginResponseFromApi.status, 200, 'HSK rejected the valid Keycloak access token');
+  if (loginResponseFromApi.status !== 200) {
+    const claims = decodeJwt(accessToken);
+    throw new Error(`HSK rejected valid login token (HTTP ${loginResponseFromApi.status}; issuer=${claims.iss}; audience=${JSON.stringify(claims.aud)}; client=${claims.azp}; username=${claims.preferred_username || 'missing'})`);
+  }
   const session = await loginResponseFromApi.json();
   assert.equal(session.user.username, username);
   assert.equal(session.user.role, 'student');
