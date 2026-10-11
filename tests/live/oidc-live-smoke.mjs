@@ -148,7 +148,18 @@ try {
   const callback = loginResponse.headers.get('location');
   assert.ok(callback, 'Keycloak did not redirect after test-user login');
   const callbackUrl = new URL(callback);
-  assert.equal(callbackUrl.protocol, new URL(redirectUri).protocol);
+  if (callbackUrl.protocol !== new URL(redirectUri).protocol) {
+    const followUp = await getFollowingRedirects(callbackUrl);
+    const page = await followUp.text();
+    const message = page
+      .replace(/<script\b[\s\S]*?<\/script>/gi, ' ')
+      .replace(/<style\b[\s\S]*?<\/style>/gi, ' ')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 360);
+    throw new Error(`Keycloak login stopped at ${callbackUrl.host}${callbackUrl.pathname} (HTTP ${followUp.status}): ${message}`);
+  }
   assert.equal(callbackUrl.searchParams.get('state'), state);
   const code = callbackUrl.searchParams.get('code');
   assert.ok(code, 'Keycloak authorization code was missing');
