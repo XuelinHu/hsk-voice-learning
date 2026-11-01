@@ -3,6 +3,9 @@ import { createAudioRecorder } from './audio-recorder.js';
 import { parseCoachReply } from './coach-reply.js';
 
 const appId = document.body.dataset.app;
+for (const link of document.querySelectorAll('[data-imagegen-link]')) {
+  link.href = `http://${window.location.hostname}:4050/`;
+}
 const storageKey = `hsk-conversation:${appId}`;
 const sessionKey = `hsk-session:${appId}`;
 const speech = createSpeechEngine(window);
