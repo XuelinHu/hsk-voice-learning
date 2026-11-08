@@ -6,9 +6,12 @@ import { extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { issueToken, verifyToken } from './auth.js';
+import { ALL_DEMO_ACCOUNTS } from './demo-accounts.js';
+import { BUILT_IN_QUESTIONS, PRACTICE_SOURCES } from './practice-content.js';
 
 const PROJECT_ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const STATIC_ROUTES = [
+  ['/platform/', join(PROJECT_ROOT, 'apps', 'platform')],
   ['/studio/', join(PROJECT_ROOT, 'apps', 'dialogue-studio')],
   ['/mission/', join(PROJECT_ROOT, 'apps', 'mission-lab')],
   ['/shared/', join(PROJECT_ROOT, 'apps', 'shared')],
@@ -23,6 +26,11 @@ const MIME_TYPES = {
   '.svg': 'image/svg+xml',
   '.webmanifest': 'application/manifest+json',
 };
+
+// Local demo identities keep the APK and browser smoke flows usable before a
+// PostgreSQL instance is provisioned. They are intentionally only active when
+// no database store is configured.
+const DEMO_IDENTITIES = new Map(ALL_DEMO_ACCOUNTS.map((account) => [account.username, account]));
 
 function sendJson(response, status, body) {
   const payload = JSON.stringify(body);
@@ -85,10 +93,13 @@ export function createAppServer({
   oidcVerifier = null,
   oidcIssuer = '',
   tlsOptions = null,
+  allowDemoLogin = process.env.NODE_ENV !== 'production',
 } = {}) {
   if (!tokenSecret) throw new Error('createAppServer requires tokenSecret');
   if (!aiClient?.chat) throw new Error('createAppServer requires aiClient.chat');
 
+  const memoryQuestions = [];
+  const memoryAttempts = new Map();
   const handler = async (request, response) => {
     response.setHeader('X-Content-Type-Options', 'nosniff');
     response.setHeader('Referrer-Policy', 'same-origin');
@@ -110,11 +121,133 @@ export function createAppServer({
         return;
       }
 
+      if (pathname.startsWith('/api/practice/') || pathname === '/api/admin/questions') {
+        const session = verifyToken(getBearerToken(request), tokenSecret);
+        if (!session) {
+          sendJson(response, 401, { error: '登录已失效，请重新登录' });
+          return;
+        }
+
+        if (request.method === 'GET' && pathname === '/api/practice/questions') {
+          const level = Number(url.searchParams.get('level'));
+          const section = url.searchParams.get('section');
+          if (!Number.isInteger(level) || level < 1 || level > 6 || !['listening', 'reading', 'speaking'].includes(section)) {
+            sendJson(response, 400, { error: '题目等级或专项无效' });
+            return;
+          }
+          const published = store?.listPracticeQuestions
+            ? await store.listPracticeQuestions({ level, section })
+            : memoryQuestions.filter((item) => item.level === level && item.section === section);
+          sendJson(response, 200, {
+            questions: [...BUILT_IN_QUESTIONS.filter((item) => item.level === level && item.section === section), ...published]
+              .map(({ answer: _answer, ...question }) => question),
+            sources: PRACTICE_SOURCES,
+          });
+          return;
+        }
+
+        if (request.method === 'POST' && pathname === '/api/admin/questions') {
+          if (session.role !== 'teacher') {
+            sendJson(response, 403, { error: '仅管理员可以发布题目' });
+            return;
+          }
+          const body = await readJson(request);
+          const level = Number(body.level);
+          const options = Array.isArray(body.options) ? body.options.map((option) => String(option).trim()) : [];
+          const answer = Number(body.answer);
+          const question = String(body.question || '').trim();
+          const section = String(body.section || '');
+          if (!Number.isInteger(level) || level < 1 || level > 6
+            || !['listening', 'reading', 'speaking'].includes(section)
+            || question.length < 4 || question.length > 4000
+            || options.length < 2 || options.length > 6
+            || options.some((option) => !option || option.length > 500)
+            || !Number.isInteger(answer) || answer < 1 || answer > options.length) {
+            sendJson(response, 400, { error: '题目内容、选项或答案格式无效' });
+            return;
+          }
+          const input = {
+            level, section, question, options, answer,
+            explanation: String(body.explanation || '').slice(0, 2000),
+            audioText: String(body.audioText || '').slice(0, 4000),
+            source: String(body.source || '管理员发布').slice(0, 300),
+            createdBy: session.sub,
+          };
+          const published = store?.createPracticeQuestion
+            ? await store.createPracticeQuestion(input)
+            : { ...input, id: `admin-${Date.now()}-${Math.random().toString(36).slice(2, 8)}` };
+          if (!store?.createPracticeQuestion) memoryQuestions.push(published);
+          sendJson(response, 201, { question: published });
+          return;
+        }
+
+        if (request.method === 'POST' && pathname === '/api/practice/attempts') {
+          const body = await readJson(request);
+          const level = Number(body.level);
+          const answer = Number(body.answer);
+          const section = String(body.section || '');
+          const published = store?.listPracticeQuestions
+            ? await store.listPracticeQuestions({ level, section })
+            : memoryQuestions.filter((item) => item.level === level && item.section === section);
+          const available = [...BUILT_IN_QUESTIONS, ...published];
+          const question = available.find((item) => item.id === body.questionId && item.level === level && item.section === section);
+          if (!question || !Number.isInteger(answer) || answer < 1 || answer > question.options.length) {
+            sendJson(response, 400, { error: '题目或答案无效' });
+            return;
+          }
+          const correct = answer === question.answer;
+          const attempt = store?.savePracticeAttempt
+            ? await store.savePracticeAttempt({ userId: session.sub, questionId: question.id, level, section, correct })
+            : { correct };
+          if (!store?.savePracticeAttempt) {
+            const attempts = memoryAttempts.get(session.sub) || [];
+            attempts.push({ section, correct });
+            memoryAttempts.set(session.sub, attempts);
+          }
+          sendJson(response, 200, {
+            correct,
+            correctAnswer: correct ? null : question.answer,
+            explanation: question.explanation,
+            attempt,
+          });
+          return;
+        }
+
+        if (request.method === 'GET' && pathname === '/api/practice/stats') {
+          const attempts = memoryAttempts.get(session.sub) || [];
+          const stats = store?.getPracticeStats
+            ? await store.getPracticeStats(session.sub)
+            : {
+                total: attempts.length,
+                correct: attempts.filter((item) => item.correct).length,
+                bySection: Object.fromEntries(['listening', 'reading', 'speaking'].map((section) => {
+                  const sectionAttempts = attempts.filter((item) => item.section === section);
+                  return [section, {
+                    total: sectionAttempts.length,
+                    correct: sectionAttempts.filter((item) => item.correct).length,
+                    rate: sectionAttempts.length
+                      ? Math.round(sectionAttempts.filter((item) => item.correct).length / sectionAttempts.length * 100)
+                      : 0,
+                  }];
+                })),
+              };
+          sendJson(response, 200, { ...stats, sources: PRACTICE_SOURCES });
+          return;
+        }
+      }
+
       if (request.method === 'POST' && pathname === '/api/login') {
         const body = await readJson(request);
-        const user = await store?.authenticate?.(body.username, body.password);
+        const normalizedUsername = String(body.username || '').trim().toLowerCase();
+        const demo = allowDemoLogin ? DEMO_IDENTITIES.get(normalizedUsername) : null;
+        const authenticated = await store?.authenticate?.(body.username, body.password);
+        const user = authenticated || allowDemoLogin
+          ? authenticated || (demo && String(body.password || '') === demo.password
+            ? (({ password: _password, ...identity }) => identity)(demo)
+            : null)
+          : null;
         await store?.recordLogin?.({
-          userId: user?.id,
+          userId: authenticated?.id,
           username: body.username,
           success: Boolean(user),
           clientApp: body.appId,
@@ -180,7 +313,7 @@ export function createAppServer({
         const userMessage = [...body.messages]
           .reverse()
           .find((message) => message?.role === 'user' && String(message.content || '').trim());
-        const persisted = userMessage && store?.saveChatTurn
+        const persisted = userMessage && !String(session.sub).startsWith('demo-') && store?.saveChatTurn
           ? await store.saveChatTurn({
             conversationId: body.conversationId,
             userId: session.sub,
@@ -224,7 +357,7 @@ export function createAppServer({
           audioDataUri: audio,
           locale: body.locale,
         });
-        const persisted = store?.saveTranscription
+        const persisted = !String(session.sub).startsWith('demo-') && store?.saveTranscription
           ? await store.saveTranscription({
             conversationId: body.conversationId,
             userId: session.sub,

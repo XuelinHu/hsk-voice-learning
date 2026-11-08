@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>HSK 综合练习平台</title><link rel="stylesheet" href="/platform/platform.css"><link rel="stylesheet" href="/platform/platform-overrides.css">
+</head>
+<body>
+  <div id="login" class="login-screen">
+    <div class="login-card"><div class="mark">汉</div><p class="eyebrow">HSK VOICE LAB</p><h1>汉语考试练习平台</h1><p class="muted">真题风格练习、听力朗读、AI 口语反馈与学习统计。</p>
+      <div class="demo-grid"><label>选择开发测试账号<select id="demo-account"><option value="">请选择身份</option><optgroup label="学员"><option value="student01">测试学员 01 · student01</option><option value="student02">测试学员 02 · student02</option><option value="student03">测试学员 03 · student03</option><option value="student04">测试学员 04 · student04</option><option value="student05">测试学员 05 · student05</option><option value="student06">测试学员 06 · student06</option><option value="student07">测试学员 07 · student07</option><option value="student08">测试学员 08 · student08</option><option value="student09">测试学员 09 · student09</option><option value="student10">测试学员 10 · student10</option></optgroup><optgroup label="管理员"><option value="admin01">测试管理员 01 · admin01</option><option value="admin02">测试管理员 02 · admin02</option></optgroup></select></label><button id="demo-login" class="primary" type="button">使用所选账号登录</button></div>
+      <form id="manual-login"><label>账号<input id="login-user" autocomplete="username" required></label><label>密码<input id="login-pass" type="password" autocomplete="current-password" required></label><button class="primary" type="submit">登录</button><p id="login-error" class="error"></p></form>
+      <p class="source-note">题目为依据 HSK 公开样题结构整理的练习内容，不替代官方试卷。</p>
+    </div>
+  </div>
+  <div id="app" hidden>
+    <header><div class="brand"><span class="mark small">汉</span><div><b>HSK 综合练习平台</b><small>听说读一体化学习空间</small></div></div><nav><button data-view="practice" class="active">练习中心</button><button data-view="stats">学习统计</button><button data-view="admin" id="admin-nav" hidden>题库管理</button></nav><div class="account"><span id="account-name"></span><button id="logout">退出</button></div></header>
+    <main>
+      <section id="practice" class="view"><div class="page-head"><div><p class="eyebrow">PRACTICE CENTER</p><h1>今天练一组 HSK 题</h1><p class="muted">选择等级和专项，完成后即时查看解析与发音。</p><p id="source-links" class="source-links"></p></div><div class="filters"><label>等级<select id="level"><option value="1">HSK 1</option><option value="2">HSK 2</option><option value="3" selected>HSK 3</option><option value="4">HSK 4</option></select></label><label>专项<select id="section"><option value="listening">听力</option><option value="reading">阅读</option><option value="speaking">口语</option></select></label></div></div><div class="practice-layout"><div id="question-list" class="question-list"></div><aside class="practice-aside"><div class="score-card"><span>本组得分</span><strong id="score">0 / 0</strong><div class="bar"><i id="score-bar" class="score-bar--0"></i></div></div><div class="tip-card"><b>语音练习</b><p>点击“朗读”听标准普通话，再用麦克风或跟读功能练习。</p><button id="speak-tip">🔊 朗读提示</button></div></aside></div></section>
+      <section id="stats" class="view" hidden><div class="page-head"><div><p class="eyebrow">PROGRESS</p><h1>学习统计</h1><p class="muted">用正确率和专项趋势安排下一次复习。</p></div></div><div class="stat-grid"><div class="stat"><span>累计作答</span><strong id="stat-total">0</strong></div><div class="stat"><span>正确率</span><strong id="stat-rate">0%</strong></div><div class="stat"><span>练习专项</span><strong>3</strong></div></div><div class="chart-card"><h2>专项正确率</h2><div id="chart" class="chart"></div></div></section>
+      <section id="admin" class="view" hidden><div class="page-head"><div><p class="eyebrow">ADMIN CONSOLE</p><h1>题库管理</h1><p class="muted">发布适合当前课程的专项练习，学员端会即时看到。</p></div></div><form id="publish-form" class="publish-form"><label>等级<select id="new-level"><option>1</option><option>2</option><option selected>3</option><option>4</option></select></label><label>专项<select id="new-section"><option value="listening">听力</option><option value="reading">阅读</option><option value="speaking">口语</option></select></label><label class="wide">题目<textarea id="new-question" required placeholder="例如：你周末有什么安排？"></textarea></label><label>选项（用 | 分隔）<input id="new-options" required placeholder="去公园|在家休息|去上班"></label><label>答案（从 1 开始）<input id="new-answer" type="number" min="1" value="1" required></label><label class="wide">解析<textarea id="new-explanation" placeholder="说明正确答案依据"></textarea></label><label class="wide">听力朗读文本（选填）<textarea id="new-audio" placeholder="留空表示非听力题"></textarea></label><p id="publish-error" class="error" role="alert"></p><button class="primary" type="submit">发布题目</button></form><div id="published" class="published"></div></section>
+    </main>
+  </div>
+  <script type="module" src="/platform/platform.js"></script>
+</body></html>

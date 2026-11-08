@@ -10,6 +10,9 @@ const browserPaths = [
   'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
   'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
   'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+  '/usr/bin/google-chrome',
+  '/usr/bin/chromium',
+  '/usr/bin/chromium-browser',
 ];
 
 let server;
@@ -129,7 +132,7 @@ for (const app of [
   });
 }
 
-test('本机 Edge 原生语音能力：麦克风、识别接口和 Microsoft 中文语音可用', async () => {
+test('Windows Edge 原生语音能力：麦克风、识别接口和 Microsoft 中文语音可用', { skip: process.platform !== 'win32' }, async () => {
   const context = await browser.newContext({ permissions: ['microphone'] });
   const page = await context.newPage();
   await page.goto(`${baseUrl}/studio/`);

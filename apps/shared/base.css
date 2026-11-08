@@ -93,6 +93,11 @@ button:disabled, input:disabled { cursor: wait; opacity: .55; }
 }
 
 .login-form { width: min(400px, 100%); }
+.demo-login-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 0 18px; }
+.demo-login-buttons button { border: 1px solid var(--line); border-radius: 6px; padding: 10px; background: var(--soft); color: var(--ink); font-size: 12px; font-weight: 700; }
+.demo-login-buttons button:hover { border-color: var(--accent); }
+.demo-login-buttons label { display: grid; gap: 5px; color: var(--muted); font-size: 11px; }
+.demo-login-buttons select { min-width: 0; border: 1px solid var(--line); border-radius: 6px; padding: 9px; background: var(--soft); color: var(--ink); }
 .login-form__eyebrow { margin: 0 0 10px; color: var(--accent); font-size: 13px; font-weight: 800; }
 .login-form h2 { margin: 0; font-size: 28px; }
 .login-form__intro { margin: 10px 0 28px; color: var(--muted); line-height: 1.7; }

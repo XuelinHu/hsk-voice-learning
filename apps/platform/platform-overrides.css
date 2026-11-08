@@ -1,0 +1,21 @@
+[hidden] { display: none !important; }
+.score-bar--0 { width: 0%; }
+.score-bar--25 { width: 25%; }
+.score-bar--50 { width: 50%; }
+.score-bar--75 { width: 75%; }
+.score-bar--100 { width: 100%; }
+.chart__bar { height: 8%; }
+.chart__bar--1 { height: 25%; }
+.chart__bar--2 { height: 50%; }
+.chart__bar--3 { height: 75%; }
+.chart__bar--4 { height: 100%; }
+.source-links { display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 0 0; font-size: 12px; }
+.source-links a { color: #236b4b; }
+.options button:disabled { cursor: default; }
+.score-card .bar i.score-bar--0 { width: 0%; }
+.score-card .bar i.score-bar--25 { width: 25%; }
+.score-card .bar i.score-bar--50 { width: 50%; }
+.score-card .bar i.score-bar--75 { width: 75%; }
+.score-card .bar i.score-bar--100 { width: 100%; }
+.demo-grid label { display: grid; gap: 5px; color: var(--muted); font-size: 12px; }
+.demo-grid select { min-width: 0; border: 1px solid var(--line); border-radius: 6px; padding: 10px; background: #fff; color: var(--ink); }

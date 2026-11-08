@@ -2,18 +2,12 @@ import { createDatabasePool } from '../server/database.js';
 import { hashPassword } from '../server/password.js';
 import { assertDemoSeedTarget, validateDemoPasswords } from '../server/demo-seed-policy.js';
 import { seedDemoUsers } from '../server/demo-seed-users.js';
+import { DEMO_ACCOUNTS } from '../server/demo-accounts.js';
 
-const users = [
-  {
-    id: 'student-001', username: 'hskstudent', displayName: '林晓语', role: 'student',
-    password: process.env.HSK_STUDENT_PASSWORD,
-  },
-  {
-    id: 'teacher-001', username: 'hskteacher', displayName: '周老师', role: 'teacher',
-    password: process.env.HSK_TEACHER_PASSWORD,
-  },
-];
-
+const users = DEMO_ACCOUNTS.map((account) => ({
+  ...account,
+  password: process.env[`HSK_DEMO_PASSWORD_${account.username.toUpperCase()}`] || account.password,
+}));
 const databaseName = assertDemoSeedTarget({
   nodeEnv: process.env.NODE_ENV,
   allowDemoSeed: process.env.ALLOW_DEMO_SEED,

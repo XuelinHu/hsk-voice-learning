@@ -134,6 +134,108 @@ test('健康检查只返回配置状态，不返回密钥', async () => {
   });
 });
 
+test('练习平台完整闭环：鉴权、管理员发题、学员作答与统计', async () => {
+  const published = [];
+  const attempts = [];
+  const server = createAppServer({
+    tokenSecret: 'practice-flow-secret',
+    allowDemoLogin: false,
+    aiClient: { async chat() { return 'ok'; } },
+    store: {
+      async authenticate(username, password) {
+        if (password !== 'flow-password') return null;
+        if (username === 'flowadmin') return { id: 'flow-admin', username, displayName: '题库管理员', role: 'teacher' };
+        if (username === 'flowstudent') return { id: 'flow-student', username, displayName: '练习学员', role: 'student' };
+        return null;
+      },
+      async listPracticeQuestions({ level, section }) {
+        return published.filter((question) => question.level === level && question.section === section);
+      },
+      async createPracticeQuestion(input) {
+        const question = { ...input, id: 'published-question-1' };
+        published.push(question);
+        return question;
+      },
+      async savePracticeAttempt(input) {
+        attempts.push(input);
+        return { correct: input.correct, id: attempts.length };
+      },
+      async getPracticeStats(userId) {
+        const userAttempts = attempts.filter((attempt) => attempt.userId === userId);
+        return {
+          total: userAttempts.length,
+          correct: userAttempts.filter((attempt) => attempt.correct).length,
+          bySection: { reading: { total: userAttempts.length, rate: 100 } },
+        };
+      },
+    },
+  });
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  const request = async (path, { token, method = 'GET', body } = {}) => fetch(`${baseUrl}${path}`, {
+    method,
+    headers: {
+      ...(token ? { authorization: `Bearer ${token}` } : {}),
+      ...(body ? { 'content-type': 'application/json' } : {}),
+    },
+    ...(body ? { body: JSON.stringify(body) } : {}),
+  });
+  const getSession = async (username) => {
+    const response = await request('/api/login', { method: 'POST', body: { username, password: 'flow-password' } });
+    assert.equal(response.status, 200);
+    return (await response.json()).token;
+  };
+
+  try {
+    assert.equal((await request('/api/practice/questions?level=3&section=reading')).status, 401);
+    const adminToken = await getSession('flowadmin');
+    const studentToken = await getSession('flowstudent');
+    const deniedPublish = await request('/api/admin/questions', {
+      token: studentToken,
+      method: 'POST',
+      body: { level: 3, section: 'reading', question: '周末去哪里？', options: ['公园', '学校'], answer: 1 },
+    });
+    assert.equal(deniedPublish.status, 403);
+
+    const publish = await request('/api/admin/questions', {
+      token: adminToken,
+      method: 'POST',
+      body: {
+        level: 3, section: 'reading', question: '小林周六去图书馆借书。问：他周六去哪里？',
+        options: ['图书馆', '医院', '公司'], answer: 1,
+        explanation: '文中说周六去图书馆借书。',
+      },
+    });
+    assert.equal(publish.status, 201);
+    const publishedBody = await publish.json();
+    assert.equal(publishedBody.question.id, 'published-question-1');
+
+    const listResponse = await request('/api/practice/questions?level=3&section=reading', { token: studentToken });
+    const list = await listResponse.json();
+    assert.equal(listResponse.status, 200);
+    assert.ok(list.questions.some((question) => question.id === 'published-question-1'));
+    assert.equal('answer' in list.questions.find((question) => question.id === 'published-question-1'), false);
+    assert.ok(list.sources.some((source) => source.kind === 'official-reference'));
+
+    const answer = await request('/api/practice/attempts', {
+      token: studentToken,
+      method: 'POST',
+      body: { questionId: 'published-question-1', level: 3, section: 'reading', answer: 1 },
+    });
+    assert.equal(answer.status, 200);
+    const answerResult = await answer.json();
+    assert.equal(answerResult.correct, true);
+    assert.equal(answerResult.correctAnswer, null);
+    const statsResponse = await request('/api/practice/stats', { token: studentToken });
+    const stats = await statsResponse.json();
+    assert.equal(stats.total, 1);
+    assert.equal(stats.correct, 1);
+    assert.equal(attempts[0].userId, 'flow-student');
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
 test('登录后才能调用 AI 对话接口', async () => {
   await withServer(async (baseUrl, calls, persistenceCalls) => {
     const denied = await fetch(`${baseUrl}/api/chat`, {

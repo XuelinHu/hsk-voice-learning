@@ -48,6 +48,14 @@ const state = {
   restartTimer: null,
   recording: false,
 };
+const DEMO_LOGIN = {
+  student01: { username: 'student01', password: 'Maple-Study-2026-01!' }, student02: { username: 'student02', password: 'Maple-Study-2026-02!' },
+  student03: { username: 'student03', password: 'Maple-Study-2026-03!' }, student04: { username: 'student04', password: 'Maple-Study-2026-04!' },
+  student05: { username: 'student05', password: 'Maple-Study-2026-05!' }, student06: { username: 'student06', password: 'Maple-Study-2026-06!' },
+  student07: { username: 'student07', password: 'Maple-Study-2026-07!' }, student08: { username: 'student08', password: 'Maple-Study-2026-08!' },
+  student09: { username: 'student09', password: 'Maple-Study-2026-09!' }, student10: { username: 'student10', password: 'Maple-Study-2026-10!' },
+  admin01: { username: 'admin01', password: 'Console-Admin-2026-01!' }, admin02: { username: 'admin02', password: 'Console-Admin-2026-02!' },
+};
 
 function readStoredJson(key, fallback) {
   try {
@@ -336,6 +344,14 @@ elements.loginForm.addEventListener('submit', async (event) => {
   } finally {
     submit.disabled = false;
   }
+});
+
+document.querySelector('#demo-login')?.addEventListener('click', () => {
+  const account = DEMO_LOGIN[document.querySelector('#demo-account')?.value];
+  if (!account) return;
+  elements.username.value = account.username;
+  elements.password.value = account.password;
+  elements.loginForm.requestSubmit();
 });
 
 elements.form.addEventListener('submit', (event) => {

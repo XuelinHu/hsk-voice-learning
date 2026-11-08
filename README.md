@@ -11,6 +11,9 @@
 
 - **HSK 对话研习室**：安静、连续的场景对话训练，适合长时间口语练习。
 - **HSK 口语任务站**：以关卡和过关条件组织口语任务，适合目标式训练。
+- **HSK 综合练习平台**：提供 HSK 1–4 听力、阅读、口语专项练习、朗读、答题统计和管理员题目发布。
+
+综合平台题目为原创练习，参考中文考试服务网的 HSK 考试介绍及 ChineseMockTest 公布的 New HSK 1–4 模考题型；各级公开模考卷链接显示在练习页。练习题不是官方真题原文。
 
 ## Android APK
 
@@ -93,23 +96,28 @@ npm start
 
 - 对话研习室：<http://127.0.0.1:4035/studio/>
 - 口语任务站：<http://127.0.0.1:4035/mission/>
+- 综合练习平台：<http://127.0.0.1:4035/platform/>
 
 网页入口由 `.env` 中的 `WEB_PORT=4035` 控制，后端 API 使用 `PORT=8040`；请按启动日志访问对应服务。
 
 ## 演示账号
 
+综合练习平台和两款客户端提供开发/演示用的账号下拉：10 个学员账号 `student01`–`student10`，以及两个管理员账号 `admin01`、`admin02`；每个账号的密码已写入开发测试账号清单和登录页的下拉选择中。执行 `npm run db:seed:demo` 后，这 12 个账号会真实写入当前 `_dev`/`_test`/`_demo` 数据库。非生产服务可直接使用；`NODE_ENV=production` 时默认账号被禁用。旧版 `hskstudent`/`hskadmin` 账号仍兼容。
+
 | 角色 | 账号 |
 | --- | --- | --- |
-| 学员 | `hskstudent` |
-| 教师 | `hskteacher` |
+| 学员 | `student01`–`student10` |
+| 管理员 | `admin01`、`admin02` |
 
-`npm run db:migrate` 只应用数据库结构，不创建或重置用户。E2E 测试与本机演示需要这两个账号时，先确保开发数据库名以 `_dev`、`_test` 或 `_demo` 结尾，在 `.env` 配置 `DEMO_SEED_DATABASE` 与数据库名完全相同、`ALLOW_DEMO_SEED=1` 以及强随机的 `HSK_STUDENT_PASSWORD` / `HSK_TEACHER_PASSWORD`（至少 16 位、包含字母和数字且不含用户名），然后执行：
+`npm run db:migrate` 只应用数据库结构，不创建或重置用户。要写入 12 个开发测试账号，先确保数据库名以 `_dev`、`_test` 或 `_demo` 结尾，并显式执行：
 
 ```powershell
+$env:ALLOW_DEMO_SEED = '1'
+$env:DEMO_SEED_DATABASE = $env:DB_NAME
 npm run db:seed:demo
 ```
 
-种子命令在 `NODE_ENV=production` 下拒绝运行；已有同名用户不会被重置。完成后把 `ALLOW_DEMO_SEED` 改回 `0`。真实用户密码不再保存在源码、登录页或 APK 中；没有数据库时 API 会拒绝登录，不回退到内置演示账号。
+种子命令在 `NODE_ENV=production` 下拒绝运行；已有同名用户不会被重置。完成后把 `ALLOW_DEMO_SEED` 改回 `0`。这些账号仅用于开发测试，生产环境不会启用后备账号。
 
 ## 配置
 

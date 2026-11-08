@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import { assertDemoSeedTarget, validateDemoPasswords } from '../../server/demo-seed-policy.js';
 import { seedDemoUsers } from '../../server/demo-seed-users.js';
+import { DEMO_ACCOUNTS } from '../../server/demo-accounts.js';
 
 const validTarget = {
   nodeEnv: 'development',
@@ -30,6 +31,14 @@ test('演示账号密码必须足够长、包含字母数字且不含用户名',
   assert.throws(() => validateDemoPasswords([{ username: 'hskstudent', password: 'Short123' }]), /at least 16/);
   assert.throws(() => validateDemoPasswords([{ username: 'hskstudent', password: 'OnlyLettersAndNoDigits' }]), /letters and digits/);
   assert.throws(() => validateDemoPasswords([{ username: 'hskstudent', password: 'hskstudent-password-91' }]), /must not contain/);
+});
+
+test('开发测试账号清单包含十个学员和两个管理员', () => {
+  assert.equal(DEMO_ACCOUNTS.length, 12);
+  assert.equal(DEMO_ACCOUNTS.filter((user) => user.role === 'student').length, 10);
+  assert.equal(DEMO_ACCOUNTS.filter((user) => user.role === 'teacher').length, 2);
+  assert.equal(new Set(DEMO_ACCOUNTS.map((user) => user.username)).size, 12);
+  assert.doesNotThrow(() => validateDemoPasswords(DEMO_ACCOUNTS));
 });
 
 test('演示账号冲突时跳过，不覆盖现有口令、角色或状态', async () => {

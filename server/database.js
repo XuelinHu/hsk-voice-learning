@@ -282,6 +282,64 @@ export function createPostgresStore(pool) {
       };
     },
 
+    async listPracticeQuestions({ level, section }) {
+      const result = await pool.query(
+        `SELECT id, level, section, question, options, answer, explanation,
+                audio_text AS "audioText", source
+         FROM hsk_practice_questions
+         WHERE level = $1 AND section = $2
+         ORDER BY created_at DESC, id`,
+        [level, section],
+      );
+      return result.rows;
+    },
+
+    async createPracticeQuestion(input) {
+      const id = randomUUID();
+      const result = await pool.query(
+        `INSERT INTO hsk_practice_questions
+          (id, level, section, question, options, answer, explanation, audio_text, source, created_by)
+         VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $8, $9, $10)
+         RETURNING id, level, section, question, options, answer, explanation,
+                   audio_text AS "audioText", source`,
+        [id, input.level, input.section, input.question, JSON.stringify(input.options), input.answer,
+          input.explanation, input.audioText, input.source, input.createdBy],
+      );
+      return result.rows[0];
+    },
+
+    async savePracticeAttempt(input) {
+      const result = await pool.query(
+        `INSERT INTO hsk_practice_attempts (user_id, question_id, level, section, is_correct)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING id, is_correct AS correct, attempted_at`,
+        [input.userId, input.questionId, input.level, input.section, input.correct],
+      );
+      return result.rows[0];
+    },
+
+    async getPracticeStats(userId) {
+      const result = await pool.query(
+        `SELECT count(*)::int AS total,
+                count(*) FILTER (WHERE is_correct)::int AS correct,
+                section,
+                count(*)::int AS section_total,
+                count(*) FILTER (WHERE is_correct)::int AS section_correct,
+                count(*) FILTER (WHERE is_correct)::int * 100.0 / NULLIF(count(*), 0) AS section_rate
+         FROM hsk_practice_attempts WHERE user_id = $1
+         GROUP BY GROUPING SETS ((), (section))`,
+        [userId],
+      );
+      const summary = result.rows.find((row) => row.section == null) || { total: 0, correct: 0 };
+      return {
+        total: summary.total,
+        correct: summary.correct,
+        bySection: Object.fromEntries(result.rows.filter((row) => row.section).map((row) => [
+          row.section, { total: row.section_total, rate: Number(row.section_rate || 0) },
+        ])),
+      };
+    },
+
     async close() {
       await pool.end();
     },
