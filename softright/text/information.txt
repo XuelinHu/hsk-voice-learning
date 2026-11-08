@@ -1,0 +1,15 @@
+软件名称：HSK 语音学习系统
+版本号：V1.0
+开发的硬件环境：Windows PC；Android 真机；Linux GPU 服务器（本轮核验为 NVIDIA GeForce RTX 5090 D v2）
+运行的硬件环境：支持现代浏览器的 Windows 设备；支持 Android 录音与 TTS 的 Android 设备；Linux Node.js/PostgreSQL 服务节点
+开发该软件的操作系统：Windows 及 Linux（具体历史环境待申请人确认）
+软件开发环境 / 开发工具：Node.js 20+、npm、Flutter、Dart、Android SDK、PostgreSQL 客户端、Microsoft Edge/Chrome
+软件的运行平台 / 操作系统：Windows Web、Android、Linux 服务端
+软件运行支撑环境 / 支持软件：Node.js、PostgreSQL、浏览器 SpeechRecognition/SpeechSynthesis/MediaRecorder、Android TTS、可选 Keycloak OIDC
+编程语言：JavaScript、Dart、SQL、HTML、CSS
+源程序量：以源码选择清单统计为准，排除第三方依赖、构建产物、锁文件和缓存；精确行数待申请人确认
+开发目的：为中文学习者提供基于 HSK 等级和生活场景的文字、语音与任务式练习，并记录学习会话和练习结果
+面向行业 / 领域：中文教育、语言学习
+软件的主要功能：用户登录与会话鉴权；中文场景对话；口语任务；WAV 语音转写；AI 中文教练回答；浏览器和 Android TTS；练习题、答题统计和教师题目发布；学习历史保存
+软件的技术特点：Node.js HTTP/HTTPS 服务；PostgreSQL 会话和练习数据；百炼兼容 Chat Completions 文本对话与 qwen3-asr-flash 语音识别；Web MediaRecorder 与 Web Speech API；Flutter Android 原生录音/TTS；客户端按应用标识隔离会话
+申请主体、开发者、首次发表日期：待申请人补充

@@ -102,7 +102,7 @@ npm start
 
 ## 演示账号
 
-综合练习平台和两款客户端提供开发/演示用的账号下拉：10 个学员账号 `student01`–`student10`，以及两个管理员账号 `admin01`、`admin02`；每个账号的密码已写入开发测试账号清单和登录页的下拉选择中。执行 `npm run db:seed:demo` 后，这 12 个账号会真实写入当前 `_dev`/`_test`/`_demo` 数据库。非生产服务可直接使用；`NODE_ENV=production` 时默认账号被禁用。旧版 `hskstudent`/`hskadmin` 账号仍兼容。
+综合练习平台提供开发/演示用的账号下拉；Android 客户端保持简洁登录页，由测试人员手动输入账号和密码。执行 `npm run db:seed:demo` 后，这些账号会真实写入当前 `_dev`/`_test`/`_demo` 数据库。非生产服务可直接使用；`NODE_ENV=production` 时默认账号被禁用。旧版 `hskstudent`/`hskadmin` 账号仍兼容。
 
 | 角色 | 账号 |
 | --- | --- | --- |

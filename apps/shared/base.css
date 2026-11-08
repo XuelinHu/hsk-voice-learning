@@ -267,4 +267,18 @@ button:disabled, input:disabled { cursor: wait; opacity: .55; }
   .composer { padding: 12px; }
   .composer-row { grid-template-columns: 46px minmax(0, 1fr) 70px; }
   .voice-name { display: none; }
+  .login-visual { display: none; }
+  .login-overlay { display: block; }
+  .login-panel { min-height: 100dvh; padding: 24px 18px; }
+  .login-form__eyebrow,
+  .login-form__intro,
+  .demo-login-buttons,
+  .topbar__title,
+  .topbar .quiet-button[data-imagegen-link] { display: none; }
+  .login-form h2 { font-size: 24px; }
+  .login-form .field { margin-bottom: 12px; }
+  .topbar { min-height: 54px; }
+  .topbar__tools { gap: 8px; }
+  .user-menu { padding-left: 8px; }
+  .user-name { display: none; }
 }

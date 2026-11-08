@@ -19,3 +19,23 @@
 .score-card .bar i.score-bar--100 { width: 100%; }
 .demo-grid label { display: grid; gap: 5px; color: var(--muted); font-size: 12px; }
 .demo-grid select { min-width: 0; border: 1px solid var(--line); border-radius: 6px; padding: 10px; background: #fff; color: var(--ink); }
+
+@media (max-width: 760px) {
+  .login-screen { padding: 12px; }
+  .login-card { padding: 26px 20px; }
+  .login-card .eyebrow,
+  .demo-grid,
+  .source-note,
+  .source-links { display: none; }
+  .login-card h1 { font-size: 26px; }
+  .login-card > .muted { margin: 8px 0 0; font-size: 13px; }
+  .page-head { margin-bottom: 16px; }
+  .page-head .eyebrow,
+  .page-head .muted { display: none; }
+  .practice-layout { display: flex; flex-direction: column; gap: 12px; }
+  .practice-aside { order: -1; margin-top: 0; }
+  .score-card { padding: 12px 14px; }
+  .score-card strong { display: inline; margin: 0 10px 0 8px; font-size: 20px; }
+  .score-card .bar { display: inline-block; width: min(42vw, 150px); vertical-align: middle; }
+  .tip-card { display: none; }
+}

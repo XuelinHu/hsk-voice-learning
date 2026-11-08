@@ -13,21 +13,6 @@ const _ink = Color(0xFF1C2420);
 const _paper = Color(0xFFF4F6F3);
 const _line = Color(0xFFDDE3DE);
 
-const _demoAccounts = <Map<String, String>>[
-  {'username': 'student01', 'label': '测试学员 01', 'password': 'Maple-Study-2026-01!'},
-  {'username': 'student02', 'label': '测试学员 02', 'password': 'Maple-Study-2026-02!'},
-  {'username': 'student03', 'label': '测试学员 03', 'password': 'Maple-Study-2026-03!'},
-  {'username': 'student04', 'label': '测试学员 04', 'password': 'Maple-Study-2026-04!'},
-  {'username': 'student05', 'label': '测试学员 05', 'password': 'Maple-Study-2026-05!'},
-  {'username': 'student06', 'label': '测试学员 06', 'password': 'Maple-Study-2026-06!'},
-  {'username': 'student07', 'label': '测试学员 07', 'password': 'Maple-Study-2026-07!'},
-  {'username': 'student08', 'label': '测试学员 08', 'password': 'Maple-Study-2026-08!'},
-  {'username': 'student09', 'label': '测试学员 09', 'password': 'Maple-Study-2026-09!'},
-  {'username': 'student10', 'label': '测试学员 10', 'password': 'Maple-Study-2026-10!'},
-  {'username': 'admin01', 'label': '测试管理员 01', 'password': 'Console-Admin-2026-01!'},
-  {'username': 'admin02', 'label': '测试管理员 02', 'password': 'Console-Admin-2026-02!'},
-];
-
 class HskVoiceApp extends StatelessWidget {
   const HskVoiceApp({
     super.key,
@@ -80,7 +65,12 @@ class HskVoiceApp extends StatelessWidget {
       ),
       home: _AppRoot(
         config: config,
-        coach: coachGateway ?? CoachApi(baseUrl: config.apiBaseUrl, clientApp: config.applicationId),
+        coach:
+            coachGateway ??
+            CoachApi(
+              baseUrl: config.apiBaseUrl,
+              clientApp: config.applicationId,
+            ),
         speech: speechGateway ?? NativeSpeechService(),
       ),
     );
@@ -145,15 +135,6 @@ class _LoginPageState extends State<_LoginPage> {
   final _password = TextEditingController();
   bool _loading = false;
   String? _error;
-  String _selectedDemo = 'student01';
-
-  void _fillDemo() {
-    final account = _demoAccounts.firstWhere((item) => item['username'] == _selectedDemo);
-    _username.text = account['username']!;
-    _password.text = account['password']!;
-    _login();
-  }
-
   @override
   void dispose() {
     _username.dispose();
@@ -184,7 +165,10 @@ class _LoginPageState extends State<_LoginPage> {
 
   Future<void> _loginWithSso() async {
     if (_loading) return;
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final session = await widget.coach.loginWithOidc(
         issuer: widget.config.oidcIssuer,
@@ -198,36 +182,6 @@ class _LoginPageState extends State<_LoginPage> {
       if (mounted) setState(() => _error = '统一登录失败：$error');
     } finally {
       if (mounted) setState(() => _loading = false);
-    }
-  }
-
-  Future<void> _editServer() async {
-    final controller = TextEditingController(text: widget.coach.baseUrl);
-    final value = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('后端服务地址'),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.url,
-          decoration: InputDecoration(hintText: widget.config.apiBaseUrl),
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, controller.text.trim()),
-            child: const Text('保存'),
-          ),
-        ],
-      ),
-    );
-    controller.dispose();
-    if (value != null && value.isNotEmpty) {
-      widget.coach.baseUrl = value;
-      if (mounted) setState(() {});
     }
   }
 
@@ -274,15 +228,6 @@ class _LoginPageState extends State<_LoginPage> {
                   const SizedBox(height: 6),
                   Text(widget.config.subtitle),
                   const SizedBox(height: 30),
-                  DropdownButtonFormField<String>(
-                    initialValue: _selectedDemo,
-                    decoration: const InputDecoration(labelText: '开发测试账号', prefixIcon: Icon(Icons.group_outlined)),
-                    items: _demoAccounts.map((account) => DropdownMenuItem<String>(value: account['username'], child: Text('${account['label']} · ${account['username']}'))).toList(),
-                    onChanged: _loading ? null : (value) => setState(() => _selectedDemo = value ?? _selectedDemo),
-                  ),
-                  const SizedBox(height: 10),
-                  OutlinedButton.icon(onPressed: _loading ? null : _fillDemo, icon: const Icon(Icons.login), label: const Text('使用所选测试账号登录')),
-                  const SizedBox(height: 14),
                   FilledButton.icon(
                     onPressed: _loading ? null : _loginWithSso,
                     icon: const Icon(Icons.key),
@@ -328,12 +273,6 @@ class _LoginPageState extends State<_LoginPage> {
                           )
                         : const Icon(Icons.login),
                     label: const Text('进入学习空间'),
-                  ),
-                  const SizedBox(height: 16),
-                  TextButton.icon(
-                    onPressed: _editServer,
-                    icon: const Icon(Icons.dns_outlined, size: 18),
-                    label: Text('服务地址 ${widget.coach.baseUrl}'),
                   ),
                 ],
               ),
