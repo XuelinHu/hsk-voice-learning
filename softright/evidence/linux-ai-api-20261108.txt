@@ -1,0 +1,10 @@
+Linux AI/API 联调记录（2026-11-08）
+
+环境：Linux GPU 服务器 192.168.1.9，项目容器 hsk-voice-learning，入口为 HTTPS 8040。
+
+1. 使用隔离测试账号登录 `/api/login`：HTTP 200。
+2. 使用返回会话调用 `/api/chat`：HTTP 200，返回非空模型回复，响应约 2 秒。
+3. 使用有效 PCM WAV（16 kHz、单声道、1 秒非静音）调用 `/api/transcribe`：HTTP 200，返回非空转写文本。
+4. 使用 1 秒静音 WAV 调用 `/api/transcribe`：HTTP 502，上游明确返回音频为空；项目保留该错误作为异常路径证据。
+
+本记录不包含 API 密钥、数据库口令或会话令牌。
