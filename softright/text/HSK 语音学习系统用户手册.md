@@ -94,6 +94,14 @@ Windows 浏览器入口为 `/platform/`、`/studio/` 和 `/mission/`；Android �
 
 登录后可以选择等级和场景、输入文字、点击麦克风录音、等待转写和 AI 回答。应用恢复最近一次文本会话；点击“开始新会话”清理当前会话链路。录音存放在应用私有目录，数据库只存转写文本和音频字节数。
 
+![对话研习室 Android 会话](../images/screenshots/android-dialogue-session.png)
+
+图 4-3（a）对话研习室 Android 登录后会话、文字回复和录音状态。
+
+![口语任务站 Android 会话](../images/screenshots/android-mission-session.png)
+
+图 4-4（a）口语任务站 Android 登录后任务进度和文字回复。
+
 ## 5. 语音操作与异常处理
 
 浏览器不支持 SpeechRecognition 时，语音状态提示用户使用最新版 Edge 或 Chrome，文字输入仍可用。Android 拒绝麦克风权限时，录音按钮会失败并显示错误；网络中断时 API 返回错误，恢复网络后可重新提交。模型超时、空回答和无效 WAV 均由服务端返回可读错误。
